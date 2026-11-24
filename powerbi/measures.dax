@@ -1,0 +1,128 @@
+// =============================================================================
+// DAX measures for the Aircraft Engine Maintenance Analytics report.
+// Table names match the Power Query names in power_query/03_tables.pq.
+// Tip: create a blank table called "_Measures" and store all measures there.
+// Health bands: Critical <= 30 cycles, Warning <= 75 cycles, otherwise Healthy.
+// =============================================================================
+
+
+// ----- Fleet health (in-service engines) -------------------------------------
+
+Engines In Service =
+CALCULATE (
+    DISTINCTCOUNT ( 'Engine Health'[ENGINE_KEY] ),
+    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+)
+
+Critical Engines =
+CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Critical" )
+
+Warning Engines =
+CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Warning" )
+
+Healthy Engines =
+CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Healthy" )
+
+% Engines Critical =
+DIVIDE ( [Critical Engines], [Engines In Service] )
+
+Avg Remaining Useful Life (cycles) =
+CALCULATE (
+    AVERAGE ( 'Engine Health'[ACTUAL_RUL] ),
+    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+)
+
+
+// ----- Reliability (run-to-failure history) ----------------------------------
+
+Avg Cycles to Failure =
+AVERAGEX (
+    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+)
+
+Shortest Life (cycles) =
+MINX (
+    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+)
+
+
+// ----- Model performance (engines with a prediction) -------------------------
+
+Engines With Prediction =
+CALCULATE (
+    COUNTROWS ( 'Engine Health' ),
+    NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+)
+
+RUL RMSE (cycles) =
+VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+RETURN
+    IF (
+        COUNTROWS ( Scored ) > 0,
+        SQRT ( AVERAGEX ( Scored, ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) ^ 2 ) )
+    )
+
+RUL MAE (cycles) =
+VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+RETURN
+    AVERAGEX ( Scored, ABS ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) )
+
+% Predictions Within 20 Cycles =
+VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+RETURN
+    DIVIDE (
+        COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
+        COUNTROWS ( Scored )
+    )
+
+// Predicting more life than the engine has is the risky direction for maintenance
+Late Predictions (over 10 cycles) =
+COUNTROWS (
+    FILTER (
+        'Engine Health',
+        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+            && 'Engine Health'[PREDICTION_ERROR] > 10
+    )
+)
+
+
+// ----- Sensor trends ----------------------------------------------------------
+
+Avg Sensor Reading =
+AVERAGE ( 'Sensor Readings'[READING] )
+
+// Change compared with the engine's first 20 cycles: a simple degradation signal
+Sensor Change vs Early Life % =
+VAR Baseline =
+    CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
+RETURN
+    DIVIDE ( [Avg Sensor Reading] - Baseline, Baseline )
+
+
+// ----- Data quality -----------------------------------------------------------
+
+DQ Checks Passed =
+CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[STATUS] = "PASS" )
+
+DQ Pass Rate =
+DIVIDE ( [DQ Checks Passed], COUNTROWS ( 'Data Quality' ) )
+
+Last Data Check =
+MAX ( 'Data Quality'[CHECKED_AT] )
+
+
+// ----- Engine detail page and formatting --------------------------------------
+
+Selected Engine Serial =
+SELECTEDVALUE ( 'Engine'[ENGINE_SERIAL_NUMBER], "Select one engine" )
+
+// Use in Conditional formatting > Format style: Field value
+Health Status Color =
+SWITCH (
+    SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ),
+    "Critical", "#C0392B",
+    "Warning",  "#E0A31F",
+    "Healthy",  "#2E9E6A"
+)

@@ -1,0 +1,11 @@
+{
+  "fleet": "FD001",
+  "model": "random_forest_baseline",
+  "model_version": "1.0",
+  "test_engines": 100,
+  "rmse_cycles": 20.1,
+  "mae_cycles": 14.62,
+  "nasa_score": 903.9,
+  "share_within_20_cycles": 0.7,
+  "notes": "Target capped at 125 cycles; evaluated against NASA's true RUL (uncapped)."
+}

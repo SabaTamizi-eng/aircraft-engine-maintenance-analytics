@@ -1,0 +1,24 @@
+# Data (downloaded and generated; see data/README.md)
+data/raw/
+data/processed/
+data/powerbi/
+
+# Secrets
+.env
+*.p8
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Power BI project local files
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

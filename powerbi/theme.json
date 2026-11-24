@@ -1,0 +1,22 @@
+{
+  "name": "Engine Maintenance",
+  "dataColors": [
+    "#1F6E8C",
+    "#E07A1F",
+    "#2E9E6A",
+    "#C0392B",
+    "#6C5B9E",
+    "#8AA1B1",
+    "#D4A017",
+    "#3B4B5C"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#1B3A57",
+  "tableAccent": "#1F6E8C",
+  "good": "#2E9E6A",
+  "neutral": "#E0A31F",
+  "bad": "#C0392B",
+  "minimum": "#2E9E6A",
+  "center": "#E0A31F",
+  "maximum": "#C0392B"
+}
