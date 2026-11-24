@@ -1,10 +1,6 @@
-"""Simulate new sensor data arriving from in-service engines, to demonstrate change data capture.
+"""Send the next N cycles of every test engine to RAW, a batch at a time, to test the
+stream/task setup.
 
-Each batch appends the next N cycles for every in-service (test) engine to
-RAW.ENGINE_CYCLES_RAW. The Snowflake stream captures only the new rows, and the
-scheduled task merges them into the star schema (sql/04_cdc_streams_tasks.sql).
-
-Usage (from the repository root, after `python -m pipeline.load_snowflake --initial`):
     python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10 --interval 60
 """
 import argparse
@@ -18,7 +14,6 @@ from pipeline.snowflake_utils import connect, put_and_copy
 
 
 def current_progress(cursor) -> pd.DataFrame:
-    """Latest cycle already loaded for each in-service engine."""
     cursor.execute("""
         SELECT fleet_id, unit_number, MAX(cycle) AS loaded_cycle
         FROM RAW.ENGINE_CYCLES_RAW
@@ -29,10 +24,10 @@ def current_progress(cursor) -> pd.DataFrame:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--batches", type=int, default=3)
     parser.add_argument("--cycles-per-batch", type=int, default=10)
-    parser.add_argument("--interval", type=int, default=60, help="seconds to wait between batches")
+    parser.add_argument("--interval", type=int, default=60, help="seconds between batches")
     args = parser.parse_args()
 
     full = pd.read_csv(PROCESSED_DIR / "engine_cycles_test_full.csv")
@@ -48,13 +43,13 @@ def main() -> None:
                 & (merged["cycle"] <= merged["loaded_cycle"] + args.cycles_per_batch)
             ][CYCLE_COLUMNS]
             if batch.empty:
-                print("All in-service engine cycles have been delivered.")
+                print("nothing left to send")
                 break
 
             path = FEED_DIR / f"engine_cycles_batch_{datetime.now():%Y%m%d_%H%M%S}.csv"
             batch.to_csv(path, index=False)
             engines = batch.groupby(["fleet_id", "unit_number"]).ngroups
-            print(f"Batch {batch_no}: {len(batch):,} new cycles for {engines} engines")
+            print(f"batch {batch_no}: {len(batch):,} cycles, {engines} engines")
             put_and_copy(cursor, path, "cycles", "RAW.ENGINE_CYCLES_RAW", CYCLE_COLUMNS, add_source_file=True)
 
             delivered = batch.rename(columns={"cycle": "loaded_cycle"})[["fleet_id", "unit_number", "loaded_cycle"]]

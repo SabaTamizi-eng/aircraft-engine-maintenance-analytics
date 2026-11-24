@@ -1,8 +1,5 @@
-/* =============================================================================
-   99_teardown.sql
-   Remove everything this project created (for example, before a trial ends).
-   This permanently deletes the data. Run as ACCOUNTADMIN.
-   ============================================================================= */
+-- Drops everything the project created. Run as ACCOUNTADMIN.
+
 USE ROLE ACCOUNTADMIN;
 
 ALTER TASK IF EXISTS ENGINE_ANALYTICS.ANALYTICS.TASK_PROCESS_ENGINE_CYCLES SUSPEND;

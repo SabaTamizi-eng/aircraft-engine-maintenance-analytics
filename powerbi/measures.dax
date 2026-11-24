@@ -1,12 +1,7 @@
-// =============================================================================
-// DAX measures for the Aircraft Engine Maintenance Analytics report.
-// Table names match the Power Query names in power_query/03_tables.pq.
-// Tip: create a blank table called "_Measures" and store all measures there.
-// Health bands: Critical <= 30 cycles, Warning <= 75 cycles, otherwise Healthy.
-// =============================================================================
+// Measures (kept in a "_Measures" table). Table names = query names in power_query/queries.pq
 
 
-// ----- Fleet health (in-service engines) -------------------------------------
+// ---- fleet health ----
 
 Engines In Service =
 CALCULATE (
@@ -33,7 +28,7 @@ CALCULATE (
 )
 
 
-// ----- Reliability (run-to-failure history) ----------------------------------
+// ---- reliability (train engines) ----
 
 Avg Cycles to Failure =
 AVERAGEX (
@@ -48,7 +43,7 @@ MINX (
 )
 
 
-// ----- Model performance (engines with a prediction) -------------------------
+// ---- model ----
 
 Engines With Prediction =
 CALCULATE (
@@ -77,7 +72,7 @@ RETURN
         COUNTROWS ( Scored )
     )
 
-// Predicting more life than the engine has is the risky direction for maintenance
+// model said more life left than there really was
 Late Predictions (over 10 cycles) =
 COUNTROWS (
     FILTER (
@@ -88,12 +83,12 @@ COUNTROWS (
 )
 
 
-// ----- Sensor trends ----------------------------------------------------------
+// ---- sensors ----
 
 Avg Sensor Reading =
 AVERAGE ( 'Sensor Readings'[READING] )
 
-// Change compared with the engine's first 20 cycles: a simple degradation signal
+// vs. the first 20 cycles
 Sensor Change vs Early Life % =
 VAR Baseline =
     CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
@@ -101,7 +96,7 @@ RETURN
     DIVIDE ( [Avg Sensor Reading] - Baseline, Baseline )
 
 
-// ----- Data quality -----------------------------------------------------------
+// ---- data quality ----
 
 DQ Checks Passed =
 CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[STATUS] = "PASS" )
@@ -113,12 +108,12 @@ Last Data Check =
 MAX ( 'Data Quality'[CHECKED_AT] )
 
 
-// ----- Engine detail page and formatting --------------------------------------
+// ---- engine detail / formatting ----
 
 Selected Engine Serial =
 SELECTEDVALUE ( 'Engine'[ENGINE_SERIAL_NUMBER], "Select one engine" )
 
-// Use in Conditional formatting > Format style: Field value
+// for conditional formatting (field value)
 Health Status Color =
 SWITCH (
     SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ),

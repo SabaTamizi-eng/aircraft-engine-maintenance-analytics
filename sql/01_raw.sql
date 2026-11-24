@@ -1,9 +1,6 @@
-/* =============================================================================
-   01_raw.sql
-   Landing layer: file format, internal stage, raw tables and the CDC stream.
-   Column order must match pipeline/config.py (CYCLE_COLUMNS, TRUTH_COLUMNS,
-   PREDICTION_COLUMNS).
-   ============================================================================= */
+-- Landing tables, stage and stream.
+-- Column order has to match the CSV files (see pipeline/config.py).
+
 USE ROLE ENGINE_ENGINEER;
 USE WAREHOUSE ENGINE_WH;
 USE SCHEMA ENGINE_ANALYTICS.RAW;
@@ -15,10 +12,9 @@ CREATE FILE FORMAT IF NOT EXISTS CSV_FF
   EMPTY_FIELD_AS_NULL = TRUE;
 
 CREATE STAGE IF NOT EXISTS ENGINE_STAGE
-  FILE_FORMAT = CSV_FF
-  COMMENT = 'Internal stage for pipeline files';
+  FILE_FORMAT = CSV_FF;
 
--- One row per engine per operating cycle, exactly as delivered (append-only)
+-- one row per engine per cycle, append only
 CREATE TABLE IF NOT EXISTS ENGINE_CYCLES_RAW (
     fleet_id        VARCHAR(5)   NOT NULL,   -- FD001 to FD004
     dataset_split   VARCHAR(5)   NOT NULL,   -- 'train' (run to failure) or 'test' (in service)
@@ -34,7 +30,7 @@ CREATE TABLE IF NOT EXISTS ENGINE_CYCLES_RAW (
     loaded_at       TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
--- Failure reference per engine (full reload each time)
+-- where each engine fails; truncated and reloaded each time
 CREATE TABLE IF NOT EXISTS ENGINE_RUL_TRUTH (
     fleet_id            VARCHAR(5)  NOT NULL,
     dataset_split       VARCHAR(5)  NOT NULL,
@@ -44,7 +40,7 @@ CREATE TABLE IF NOT EXISTS ENGINE_RUL_TRUTH (
     loaded_at           TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
--- Remaining useful life predictions from ml/train_rul_model.py (full reload each time)
+-- output of ml/train_rul_model.py; truncated and reloaded each time
 CREATE TABLE IF NOT EXISTS RUL_PREDICTIONS_RAW (
     fleet_id        VARCHAR(5)  NOT NULL,
     dataset_split   VARCHAR(5)  NOT NULL,
@@ -56,9 +52,8 @@ CREATE TABLE IF NOT EXISTS RUL_PREDICTIONS_RAW (
     loaded_at       TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
--- Change data capture: the stream records every row appended to the landing table
--- since it was last consumed. Created before the first load so history flows through it too.
+-- Created before the first load, so the initial data goes through the same path
+-- as later batches.
 CREATE STREAM IF NOT EXISTS ENGINE_CYCLES_STREAM
   ON TABLE ENGINE_CYCLES_RAW
-  APPEND_ONLY = TRUE
-  COMMENT = 'New engine cycles waiting to be merged into ANALYTICS';
+  APPEND_ONLY = TRUE;

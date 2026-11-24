@@ -1,9 +1,6 @@
-/* =============================================================================
-   04_cdc_streams_tasks.sql
-   Change data capture: a stored procedure merges only the new rows captured by
-   RAW.ENGINE_CYCLES_STREAM into the star schema, and a task runs it every
-   5 minutes, but only when the stream actually has data.
-   ============================================================================= */
+-- Merge new rows from the stream into the star schema.
+-- The task runs every 5 minutes but skips when the stream is empty.
+
 USE ROLE ENGINE_ENGINEER;
 USE WAREHOUSE ENGINE_WH;
 USE SCHEMA ENGINE_ANALYTICS.ANALYTICS;
@@ -18,11 +15,11 @@ DECLARE
     new_engines   INTEGER DEFAULT 0;
     merged_cycles INTEGER DEFAULT 0;
 BEGIN
-    -- Both MERGE statements read the stream inside one transaction, so they see the
-    -- same set of changes. The stream offset only moves forward when we COMMIT.
+    -- Both MERGEs read the stream. Inside one transaction they see the same rows,
+    -- and the offset only moves on COMMIT.
     BEGIN TRANSACTION;
 
-    -- 1) Register engines seen for the first time
+    -- new engines
     MERGE INTO ENGINE_ANALYTICS.ANALYTICS.DIM_ENGINE d
     USING (
         SELECT DISTINCT
@@ -48,7 +45,7 @@ BEGIN
     );
     new_engines := SQLROWCOUNT;
 
-    -- 2) Upsert the new cycles (latest delivery wins if a cycle arrives twice)
+    -- cycles (latest delivery wins)
     MERGE INTO ENGINE_ANALYTICS.ANALYTICS.FACT_ENGINE_CYCLE f
     USING (
         SELECT
@@ -101,22 +98,17 @@ EXCEPTION
 END;
 $$;
 
--- Runs every 5 minutes; the WHEN clause skips the run (and the warehouse) if nothing is new
 CREATE OR REPLACE TASK TASK_PROCESS_ENGINE_CYCLES
   WAREHOUSE = ENGINE_WH
   SCHEDULE = '5 MINUTE'
-  COMMENT = 'Merge new engine cycles from the CDC stream into the star schema'
   WHEN SYSTEM$STREAM_HAS_DATA('ENGINE_ANALYTICS.RAW.ENGINE_CYCLES_STREAM')
 AS
   CALL ENGINE_ANALYTICS.ANALYTICS.SP_PROCESS_ENGINE_CYCLES();
 
 ALTER TASK TASK_PROCESS_ENGINE_CYCLES RESUME;
 
-/* Useful commands
-   EXECUTE TASK ANALYTICS.TASK_PROCESS_ENGINE_CYCLES;          -- run now instead of waiting
-   CALL ANALYTICS.SP_PROCESS_ENGINE_CYCLES();                  -- or call the procedure directly
-   SELECT SYSTEM$STREAM_HAS_DATA('ENGINE_ANALYTICS.RAW.ENGINE_CYCLES_STREAM');
-   SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY(TASK_NAME => 'TASK_PROCESS_ENGINE_CYCLES'))
-     ORDER BY scheduled_time DESC LIMIT 10;
-   ALTER TASK ANALYTICS.TASK_PROCESS_ENGINE_CYCLES SUSPEND;    -- pause when not demoing
-*/
+-- EXECUTE TASK ANALYTICS.TASK_PROCESS_ENGINE_CYCLES;
+-- SELECT SYSTEM$STREAM_HAS_DATA('ENGINE_ANALYTICS.RAW.ENGINE_CYCLES_STREAM');
+-- SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY(TASK_NAME => 'TASK_PROCESS_ENGINE_CYCLES'))
+--   ORDER BY scheduled_time DESC LIMIT 10;
+-- ALTER TASK ANALYTICS.TASK_PROCESS_ENGINE_CYCLES SUSPEND;

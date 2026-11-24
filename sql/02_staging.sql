@@ -1,13 +1,10 @@
-/* =============================================================================
-   02_staging.sql
-   Cleaned, de-duplicated views over the raw tables, plus one shared definition
-   of the engine business key.
-   ============================================================================= */
+-- De-duplicated views over RAW and the engine key function.
+
 USE ROLE ENGINE_ENGINEER;
 USE WAREHOUSE ENGINE_WH;
 USE SCHEMA ENGINE_ANALYTICS.STAGING;
 
--- Engine business key, e.g. FD001-TRAIN-007. Defined once and reused everywhere.
+-- e.g. FD001-TRAIN-007
 CREATE OR REPLACE FUNCTION FN_ENGINE_KEY(fleet_id VARCHAR, dataset_split VARCHAR, unit_number NUMBER)
 RETURNS VARCHAR
 AS
@@ -15,7 +12,7 @@ $$
     fleet_id || '-' || UPPER(dataset_split) || '-' || LPAD(unit_number::VARCHAR, 3, '0')
 $$;
 
--- Latest version of each engine cycle (a re-delivered cycle replaces the earlier one)
+-- if a cycle is delivered twice, keep the latest
 CREATE OR REPLACE VIEW STG_ENGINE_CYCLES AS
 SELECT
     ENGINE_ANALYTICS.STAGING.FN_ENGINE_KEY(fleet_id, dataset_split, unit_number) AS engine_key,
@@ -26,7 +23,7 @@ QUALIFY ROW_NUMBER() OVER (
     ORDER BY loaded_at DESC
 ) = 1;
 
--- Failure reference. failure_cycle = the cycle at which the engine fails (or would fail).
+-- failure_cycle: last cycle for run-to-failure engines, last cycle + true RUL for test engines
 CREATE OR REPLACE VIEW STG_ENGINE_RUL_TRUTH AS
 SELECT
     ENGINE_ANALYTICS.STAGING.FN_ENGINE_KEY(fleet_id, dataset_split, unit_number) AS engine_key,
@@ -38,7 +35,6 @@ SELECT
     final_cycle + rul_at_final_cycle AS failure_cycle
 FROM ENGINE_ANALYTICS.RAW.ENGINE_RUL_TRUTH;
 
--- Latest prediction per engine and cycle
 CREATE OR REPLACE VIEW STG_RUL_PREDICTIONS AS
 SELECT
     ENGINE_ANALYTICS.STAGING.FN_ENGINE_KEY(fleet_id, dataset_split, unit_number) AS engine_key,

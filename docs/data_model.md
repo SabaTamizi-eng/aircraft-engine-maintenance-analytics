@@ -55,11 +55,10 @@ erDiagram
 | `VW_SENSOR_READINGS_LONG` | engine x cycle x sensor | `sensor_id`, `reading` |
 | `VW_DATA_QUALITY_CHECKS` | check | `failing_rows`, `status` |
 
-**Actual remaining useful life (RUL)** = failure cycle - current cycle, where the failure
-cycle is the last cycle for run-to-failure engines, and last observed cycle + NASA's true
-RUL for in-service engines.
+`actual_rul` = failure cycle - current cycle. For train engines the failure cycle is the
+last cycle; for test engines it's the last observed cycle + NASA's true RUL.
 
-**Health status:** Critical when RUL <= 30 cycles, Warning when RUL <= 75, otherwise Healthy.
+`health_status`: Critical if RUL <= 30, Warning if <= 75, otherwise Healthy.
 
 ## Sensors
 

@@ -1,8 +1,4 @@
-// fnLoadTable
-// Returns one reporting table, from the local CSV files or from Snowflake depending on
-// the SourceMode parameter. Table and column names are identical in both sources, so the
-// report does not change when you switch.
-// Create as: Home > New Source > Blank Query > Advanced Editor, paste, rename to fnLoadTable.
+// fnLoadTable("VW_ENGINE_CURRENT_HEALTH") -> table from CSV or Snowflake, based on SourceMode
 (tableName as text) as table =>
 let
     FromCsv = () =>

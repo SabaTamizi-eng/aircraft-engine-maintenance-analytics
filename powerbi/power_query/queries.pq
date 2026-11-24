@@ -1,27 +1,25 @@
-// Create one Blank Query per table below. Use the query name shown, so the DAX
-// measures in ../measures.dax work without changes.
+// one blank query each, named as below (measures.dax uses these names)
 
-// ---- Query name: Fleet ----
+// ---- Fleet ----
 let Source = fnLoadTable("DIM_FLEET") in Source
 
-// ---- Query name: Engine ----
+// ---- Engine ----
 let Source = fnLoadTable("DIM_ENGINE") in Source
 
-// ---- Query name: Sensor ----
+// ---- Sensor ----
 let Source = fnLoadTable("DIM_SENSOR") in Source
 
-// ---- Query name: Engine Cycles ----
+// ---- Engine Cycles ----
 let Source = fnLoadTable("VW_ENGINE_CYCLE_RUL") in Source
 
-// ---- Query name: Engine Health ----
+// ---- Engine Health ----
 let Source = fnLoadTable("VW_ENGINE_CURRENT_HEALTH") in Source
 
-// ---- Query name: Data Quality ----
+// ---- Data Quality ----
 let Source = fnLoadTable("VW_DATA_QUALITY_CHECKS") in Source
 
-// ---- Query name: Sensor Readings ----
-// Long format (one row per engine, cycle and sensor) for trend charts.
-// Snowflake already provides this as a view; for CSV it is built here by unpivoting.
+// ---- Sensor Readings ----
+// Snowflake has a view for this; with CSV the sensor columns are unpivoted here
 let
     Long =
         if SourceMode = "Snowflake" then

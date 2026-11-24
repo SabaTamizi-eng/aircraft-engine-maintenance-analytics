@@ -1,15 +1,12 @@
-/* =============================================================================
-   00_setup.sql
-   Warehouse, roles, database, schemas and grants. Run once as ACCOUNTADMIN.
+-- Warehouse, roles, database and schemas. Run once as ACCOUNTADMIN.
+--
+-- ENGINE_ENGINEER      owns everything and runs the pipeline
+-- ENGINE_ANALYST       read access to ANALYTICS (Power BI connects with this)
+-- ENGINE_FLEET_VIEWER  same, but only mapped fleets and masked serial numbers
 
-   Roles
-     ENGINE_ENGINEER      builds and runs the pipeline (owns all objects)
-     ENGINE_ANALYST       reads everything in ANALYTICS (Power BI connection)
-     ENGINE_FLEET_VIEWER  reads ANALYTICS, limited to mapped fleets with masked serial numbers
-   ============================================================================= */
 USE ROLE ACCOUNTADMIN;
 
--- Compute: smallest size, suspends after 60 seconds idle to save trial credits
+-- XSMALL with a 60s auto-suspend keeps trial credit use low
 CREATE WAREHOUSE IF NOT EXISTS ENGINE_WH
   WAREHOUSE_SIZE = 'XSMALL'
   AUTO_SUSPEND = 60
@@ -17,7 +14,6 @@ CREATE WAREHOUSE IF NOT EXISTS ENGINE_WH
   INITIALLY_SUSPENDED = TRUE
   COMMENT = 'Aircraft engine maintenance analytics';
 
--- Roles and hierarchy (SYSADMIN can manage everything the custom roles own)
 CREATE ROLE IF NOT EXISTS ENGINE_ENGINEER     COMMENT = 'Builds and runs the data pipeline';
 CREATE ROLE IF NOT EXISTS ENGINE_ANALYST      COMMENT = 'Reads all analytics objects';
 CREATE ROLE IF NOT EXISTS ENGINE_FLEET_VIEWER COMMENT = 'Reads analytics objects for mapped fleets only';
@@ -25,13 +21,12 @@ GRANT ROLE ENGINE_ENGINEER     TO ROLE SYSADMIN;
 GRANT ROLE ENGINE_ANALYST      TO ROLE SYSADMIN;
 GRANT ROLE ENGINE_FLEET_VIEWER TO ROLE SYSADMIN;
 
--- Give the current user all three roles so each one can be tested
+-- all three roles for the current user, so each one can be tested
 SET my_user = CURRENT_USER();
 GRANT ROLE ENGINE_ENGINEER     TO USER IDENTIFIER($my_user);
 GRANT ROLE ENGINE_ANALYST      TO USER IDENTIFIER($my_user);
 GRANT ROLE ENGINE_FLEET_VIEWER TO USER IDENTIFIER($my_user);
 
--- Account-level privileges the pipeline needs
 GRANT CREATE DATABASE           ON ACCOUNT TO ROLE ENGINE_ENGINEER;
 GRANT EXECUTE TASK              ON ACCOUNT TO ROLE ENGINE_ENGINEER;
 GRANT APPLY MASKING POLICY      ON ACCOUNT TO ROLE ENGINE_ENGINEER;
@@ -41,14 +36,13 @@ GRANT USAGE, OPERATE ON WAREHOUSE ENGINE_WH TO ROLE ENGINE_ENGINEER;
 GRANT USAGE          ON WAREHOUSE ENGINE_WH TO ROLE ENGINE_ANALYST;
 GRANT USAGE          ON WAREHOUSE ENGINE_WH TO ROLE ENGINE_FLEET_VIEWER;
 
--- Database and schemas, owned by the engineering role
 USE ROLE ENGINE_ENGINEER;
 CREATE DATABASE IF NOT EXISTS ENGINE_ANALYTICS COMMENT = 'NASA C-MAPSS engine maintenance analytics';
 CREATE SCHEMA IF NOT EXISTS ENGINE_ANALYTICS.RAW       COMMENT = 'Landing tables loaded from files';
 CREATE SCHEMA IF NOT EXISTS ENGINE_ANALYTICS.STAGING   COMMENT = 'Cleaned, de-duplicated views';
 CREATE SCHEMA IF NOT EXISTS ENGINE_ANALYTICS.ANALYTICS COMMENT = 'Star schema and reporting views';
 
--- Reporting roles can read the ANALYTICS schema only (not RAW or STAGING)
+-- reporting roles only see ANALYTICS, not RAW or STAGING
 USE ROLE ACCOUNTADMIN;
 GRANT USAGE ON DATABASE ENGINE_ANALYTICS                 TO ROLE ENGINE_ANALYST;
 GRANT USAGE ON DATABASE ENGINE_ANALYTICS                 TO ROLE ENGINE_FLEET_VIEWER;

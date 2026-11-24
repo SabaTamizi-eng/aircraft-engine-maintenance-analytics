@@ -1,4 +1,4 @@
-"""Snowflake connection and file-loading helpers shared by the load and feed scripts."""
+"""Snowflake connection + PUT/COPY helper."""
 import os
 from pathlib import Path
 
@@ -11,8 +11,7 @@ FILE_FORMAT = "RAW.CSV_FF"
 
 
 def connect():
-    """Open a connection using settings from .env (see .env.example)."""
-    import snowflake.connector  # imported here so the rest of the pipeline works without it
+    import snowflake.connector  # only needed for the Snowflake steps
 
     load_dotenv(ROOT / ".env")
     params = {
@@ -23,22 +22,21 @@ def connect():
         "database": os.getenv("SNOWFLAKE_DATABASE", "ENGINE_ANALYTICS"),
     }
     auth = os.getenv("SNOWFLAKE_AUTHENTICATOR", "externalbrowser").lower()
-    if auth == "snowflake_jwt":  # key-pair authentication
+    if auth == "snowflake_jwt":
         params["authenticator"] = "SNOWFLAKE_JWT"
         params["private_key_file"] = os.environ["SNOWFLAKE_PRIVATE_KEY_FILE"]
-    elif auth == "snowflake":  # user name and password
+    elif auth == "snowflake":
         params["password"] = os.environ["SNOWFLAKE_PASSWORD"]
-    else:  # e.g. externalbrowser (single sign-on in the browser)
+    else:
         params["authenticator"] = auth
     return snowflake.connector.connect(**params)
 
 
 def put_and_copy(cursor, csv_path: Path, stage_folder: str, table: str, columns: list[str],
                  *, add_source_file: bool = False, force: bool = False) -> int:
-    """Upload a CSV to the internal stage and COPY it into a table. Returns rows loaded.
+    """Upload a CSV to the stage and COPY it into `table`. Returns rows loaded.
 
-    COPY keeps load history per file, so re-running with the same file is skipped
-    unless force=True. That makes the incremental loads safe to repeat.
+    COPY skips files it has already loaded (unless force=True), so re-runs are safe.
     """
     stage_path = f"{STAGE}/{stage_folder}"
     cursor.execute(
@@ -61,7 +59,7 @@ def put_and_copy(cursor, csv_path: Path, stage_folder: str, table: str, columns:
     """)
     result_cols = [d[0].lower() for d in cursor.description]
     rows = cursor.fetchall()
-    if "rows_loaded" not in result_cols:  # e.g. "Copy executed with 0 files processed."
+    if "rows_loaded" not in result_cols:  # "Copy executed with 0 files processed."
         print(f"  {csv_path.name}: already loaded, skipped")
         return 0
     loaded = sum(row[result_cols.index("rows_loaded")] for row in rows)

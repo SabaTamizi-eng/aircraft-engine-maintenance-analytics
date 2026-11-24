@@ -1,18 +1,10 @@
-/* =============================================================================
-   03_analytics_star_schema.sql
-   Star schema (dimensions + fact) and the reporting views used by Power BI.
-   Tables are filled incrementally by the task in 04_cdc_streams_tasks.sql.
+-- Star schema and reporting views.
+-- DIM_ENGINE and FACT_ENGINE_CYCLE are filled by the task in 04.
 
-   DIM_FLEET 1--* DIM_ENGINE 1--* FACT_ENGINE_CYCLE
-   DIM_SENSOR 1--* VW_SENSOR_READINGS_LONG
-   ============================================================================= */
 USE ROLE ENGINE_ENGINEER;
 USE WAREHOUSE ENGINE_WH;
 USE SCHEMA ENGINE_ANALYTICS.ANALYTICS;
 
--- ---------------------------------------------------------------------------
--- Dimensions
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS DIM_FLEET (
     fleet_id                  VARCHAR(5) NOT NULL,
     fleet_name                VARCHAR    NOT NULL,
@@ -43,14 +35,13 @@ WHEN NOT MATCHED THEN INSERT
 VALUES
     (s.fleet_id, s.fleet_name, s.operating_conditions, s.operating_condition_desc, s.fault_modes, s.fault_mode_count);
 
--- Sensor descriptions from Saxena et al. (2008), "Damage Propagation Modeling for
--- Aircraft Engine Run-to-Failure Simulation"
+-- sensor names from Saxena et al. (2008)
 CREATE TABLE IF NOT EXISTS DIM_SENSOR (
     sensor_id               NUMBER(2,0) NOT NULL,
     sensor_symbol           VARCHAR(12),
     sensor_description      VARCHAR,
     unit_of_measure         VARCHAR(10),
-    used_in_baseline_model  BOOLEAN,     -- sensors that change over an engine's life in FD001
+    used_in_baseline_model  BOOLEAN,     -- false = constant in FD001
     CONSTRAINT pk_dim_sensor PRIMARY KEY (sensor_id)
 );
 
@@ -92,7 +83,7 @@ VALUES
 
 CREATE TABLE IF NOT EXISTS DIM_ENGINE (
     engine_key            VARCHAR(20) NOT NULL,   -- e.g. FD001-TEST-042
-    engine_serial_number  VARCHAR(20),            -- synthetic; masked for restricted roles (05)
+    engine_serial_number  VARCHAR(20),            -- synthetic, masked in 05
     fleet_id              VARCHAR(5)  NOT NULL,
     dataset_split         VARCHAR(5)  NOT NULL,
     unit_number           NUMBER(5,0) NOT NULL,
@@ -102,12 +93,9 @@ CREATE TABLE IF NOT EXISTS DIM_ENGINE (
     CONSTRAINT fk_engine_fleet FOREIGN KEY (fleet_id) REFERENCES DIM_FLEET (fleet_id)
 );
 
--- ---------------------------------------------------------------------------
--- Fact: one row per engine per operating cycle
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS FACT_ENGINE_CYCLE (
     engine_key        VARCHAR(20) NOT NULL,
-    fleet_id          VARCHAR(5)  NOT NULL,     -- kept on the fact for row-level security
+    fleet_id          VARCHAR(5)  NOT NULL,     -- needed by the row access policy
     cycle             NUMBER(5,0) NOT NULL,
     op_setting_1      FLOAT, op_setting_2  FLOAT, op_setting_3  FLOAT,
     sensor_1          FLOAT, sensor_2  FLOAT, sensor_3  FLOAT, sensor_4  FLOAT, sensor_5  FLOAT,
@@ -121,12 +109,9 @@ CREATE TABLE IF NOT EXISTS FACT_ENGINE_CYCLE (
     CONSTRAINT fk_cycle_engine FOREIGN KEY (engine_key) REFERENCES DIM_ENGINE (engine_key)
 );
 
--- ---------------------------------------------------------------------------
--- Reporting views (Power BI reads these)
--- ---------------------------------------------------------------------------
+-- ---- views for Power BI ----
 
--- Every cycle with the actual remaining useful life (RUL) and a health band.
--- Bands: Critical <= 30 cycles, Warning <= 75 cycles, otherwise Healthy.
+-- health bands: Critical <= 30 cycles left, Warning <= 75
 CREATE OR REPLACE VIEW VW_ENGINE_CYCLE_RUL AS
 SELECT
     f.* EXCLUDE (source_loaded_at, processed_at),
@@ -140,7 +125,7 @@ FROM ENGINE_ANALYTICS.ANALYTICS.FACT_ENGINE_CYCLE f
 JOIN ENGINE_ANALYTICS.STAGING.STG_ENGINE_RUL_TRUTH t
   ON t.engine_key = f.engine_key;
 
--- One row per engine at its latest loaded cycle, with the model prediction when available
+-- latest cycle per engine, plus the prediction if there is one for that cycle
 CREATE OR REPLACE VIEW VW_ENGINE_CURRENT_HEALTH AS
 WITH latest AS (
     SELECT engine_key, fleet_id, cycle AS current_cycle, actual_rul, health_status
@@ -158,7 +143,7 @@ SELECT
     p.predicted_rul,
     p.model_name,
     p.model_version,
-    p.predicted_rul - l.actual_rul AS prediction_error   -- positive = predicted too late (riskier)
+    p.predicted_rul - l.actual_rul AS prediction_error   -- > 0 means the model was too optimistic
 FROM latest l
 JOIN ENGINE_ANALYTICS.ANALYTICS.DIM_ENGINE d
   ON d.engine_key = l.engine_key
@@ -166,7 +151,7 @@ LEFT JOIN ENGINE_ANALYTICS.STAGING.STG_RUL_PREDICTIONS p
   ON p.engine_key = l.engine_key
  AND p.cycle = l.current_cycle;
 
--- Sensor readings in long format (one row per engine, cycle and sensor) for trend charts
+-- one row per engine, cycle and sensor (easier to chart)
 CREATE OR REPLACE VIEW VW_SENSOR_READINGS_LONG AS
 SELECT
     engine_key,

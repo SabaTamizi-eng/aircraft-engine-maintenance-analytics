@@ -1,13 +1,9 @@
-"""Parse the raw NASA text files into tidy CSV files for Snowflake, with validation checks.
+"""Parse and validate the NASA files, and write the CSVs that get loaded into Snowflake.
 
-Outputs (data/processed/):
-    engine_cycles_initial.csv    all run-to-failure (train) engines + the first part of each
-                                 in-service (test) engine's history
-    engine_cycles_test_full.csv  full in-service history, replayed later by simulate_feed.py
-    engine_rul_truth.csv         failure reference per engine, used to calculate actual RUL
-
-Usage (from the repository root):
-    python -m pipeline.transform
+data/processed/
+    engine_cycles_initial.csv    train engines + the first 60% of each test engine
+    engine_cycles_test_full.csv  all test cycles (simulate_feed.py sends the rest later)
+    engine_rul_truth.csv         last cycle and true RUL per engine
 """
 import argparse
 
@@ -20,7 +16,6 @@ from pipeline.config import (
 
 
 def read_cycles(fleet: str, split: str) -> pd.DataFrame:
-    """Read one space-separated NASA file (one row per engine per operating cycle)."""
     df = pd.read_csv(CMAPSS_DIR / f"{split}_{fleet}.txt", sep=r"\s+", header=None, names=SOURCE_COLUMNS)
     df.insert(0, "dataset_split", split)
     df.insert(0, "fleet_id", fleet)
@@ -28,12 +23,11 @@ def read_cycles(fleet: str, split: str) -> pd.DataFrame:
 
 
 def read_rul_truth(fleet: str) -> pd.Series:
-    """True remaining useful life at the last observed cycle of each test engine (row i = engine i)."""
+    # one value per test engine, in engine order: RUL at its last cycle
     return pd.read_csv(CMAPSS_DIR / f"RUL_{fleet}.txt", header=None, names=["rul"])["rul"]
 
 
 def validate_cycles(df: pd.DataFrame, fleet: str, split: str) -> None:
-    """Fail fast if a file does not match the published dataset structure."""
     errors = []
     expected_units = FLEET_INFO[fleet][f"{split}_units"]
     if df["unit_number"].nunique() != expected_units:
@@ -50,10 +44,9 @@ def validate_cycles(df: pd.DataFrame, fleet: str, split: str) -> None:
 
 
 def build_truth(train: pd.DataFrame, test: pd.DataFrame, test_rul: pd.Series) -> pd.DataFrame:
-    """One row per engine: last cycle in the source file and the RUL at that cycle."""
     keys = ["fleet_id", "dataset_split", "unit_number"]
     train_last = train.groupby(keys, as_index=False)["cycle"].max()
-    train_last["rul_at_final_cycle"] = 0  # run-to-failure: the last cycle is the failure
+    train_last["rul_at_final_cycle"] = 0  # train engines run until they fail
 
     test_last = test.groupby(keys, as_index=False)["cycle"].max().sort_values("unit_number")
     if len(test_last) != len(test_rul) or (test_rul < 0).any():
@@ -65,14 +58,13 @@ def build_truth(train: pd.DataFrame, test: pd.DataFrame, test_rul: pd.Series) ->
 
 
 def initial_slice(test: pd.DataFrame, share: float) -> pd.DataFrame:
-    """Keep the first `share` of each test engine's cycles (at least one cycle)."""
     max_cycle = test.groupby(["fleet_id", "unit_number"])["cycle"].transform("max")
     cutoff = (max_cycle * share).astype(int).clip(lower=1)
     return test[test["cycle"] <= cutoff]
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--initial-test-share", type=float, default=INITIAL_TEST_SHARE)
     args = parser.parse_args()
 
@@ -101,14 +93,9 @@ def main() -> None:
         .agg(engines=("unit_number", "nunique"), cycles=("cycle", "size"))
         .unstack("dataset_split")
     )
-    print("All validation checks passed.\n")
+    held_back = len(test_all) - (len(initial) - len(train_all))
     print(summary.to_string())
-    print(
-        f"\nInitial load: {len(initial):,} rows "
-        f"({len(train_all):,} train + {len(initial) - len(train_all):,} test). "
-        f"Held back for the simulated feed: {len(test_all) - (len(initial) - len(train_all)):,} test rows."
-    )
-    print(f"Files written to {PROCESSED_DIR}")
+    print(f"\ninitial load: {len(initial):,} rows, held back for the feed: {held_back:,}")
 
 
 if __name__ == "__main__":

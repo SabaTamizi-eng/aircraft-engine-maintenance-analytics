@@ -1,11 +1,8 @@
-"""Baseline remaining useful life (RUL) model for fleet FD001.
+"""Baseline RUL model for FD001.
 
-Trains on run-to-failure engines and scores each in-service engine at its last observed
-cycle, which is the standard NASA C-MAPSS benchmark. Writes predictions for loading into
-Snowflake (data/processed/rul_predictions.csv) and a metrics file (ml/metrics_fd001.json).
-
-Usage (from the repository root, after `python -m pipeline.download_data`):
-    python -m ml.train_rul_model
+Trained on the run-to-failure engines, evaluated on each test engine's last cycle
+(the usual C-MAPSS setup). Writes data/processed/rul_predictions.csv and
+ml/metrics_fd001.json.
 """
 import json
 from pathlib import Path
@@ -21,11 +18,11 @@ from pipeline.transform import read_cycles, read_rul_truth
 FLEET = "FD001"
 MODEL_NAME = "random_forest_baseline"
 MODEL_VERSION = "1.0"
-RUL_CAP = 125      # engines degrade slowly early in life, so RUL is capped (piecewise-linear target)
-WINDOW = 10        # rolling window, in cycles, to smooth sensor noise
+RUL_CAP = 125      # little degradation early on, so the target is capped
+WINDOW = 10        # rolling mean window (cycles)
 RANDOM_STATE = 42
 
-# Sensors that change over an engine's life in FD001 (the others are constant)
+# the other 7 sensors are constant in FD001
 FEATURE_SENSORS = [f"sensor_{i}" for i in (2, 3, 4, 7, 8, 9, 11, 12, 13, 14, 15, 17, 20, 21)]
 
 
@@ -46,7 +43,7 @@ def feature_columns() -> list[str]:
 
 
 def nasa_score(errors: np.ndarray) -> float:
-    """PHM08 scoring function: late predictions (error > 0) are penalized more than early ones."""
+    # PHM08 score: late predictions cost more than early ones
     return float(np.sum(np.where(errors < 0, np.exp(-errors / 13) - 1, np.exp(errors / 10) - 1)))
 
 

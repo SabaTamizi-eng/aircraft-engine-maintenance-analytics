@@ -1,15 +1,7 @@
-"""Create local CSV files that mirror the Snowflake reporting views.
+"""Write CSV copies of the Snowflake reporting tables/views to data/powerbi/.
 
-This lets you build the Power BI report before (or without) a Snowflake account.
-Later, switch the Power Query source to Snowflake (powerbi/power_query/) and the
-report keeps working, because table and column names match the Snowflake views.
-
-Outputs (data/powerbi/):
-    DIM_FLEET.csv, DIM_ENGINE.csv, DIM_SENSOR.csv,
-    VW_ENGINE_CYCLE_RUL.csv, VW_ENGINE_CURRENT_HEALTH.csv, VW_DATA_QUALITY_CHECKS.csv
-
-Usage (from the repository root, after transform and the model have run):
-    python -m pipeline.export_powerbi_extract
+Same table and column names as in Snowflake, so the Power BI report can be built
+locally and pointed at Snowflake later. Run after transform and train_rul_model.
 """
 from datetime import datetime
 
@@ -68,7 +60,7 @@ def main() -> None:
     truth["engine_key"] = engine_key(truth)
     truth["failure_cycle"] = truth["final_cycle"] + truth["rul_at_final_cycle"]
 
-    # DIM_ENGINE (same rules as the stored procedure in sql/04)
+    # same rules as the stored procedure in sql/04
     engines = cycles[["engine_key", "fleet_id", "dataset_split", "unit_number"]].drop_duplicates()
     engines["engine_serial_number"] = (
         "ESN-" + engines["fleet_id"].str[2:] + "-"
@@ -105,7 +97,7 @@ def main() -> None:
                        "actual_rul", "health_status", "predicted_rul", "model_name", "model_version",
                        "prediction_error"]]
 
-    # VW_DATA_QUALITY_CHECKS (same checks as sql/06, run locally)
+    # subset of the checks in sql/06
     per_engine = rul.groupby("engine_key")["cycle"].agg(["min", "max", "count"])
     checks = [
         ("No duplicate engine cycles", "Uniqueness", int(rul.duplicated(["engine_key", "cycle"]).sum())),
@@ -134,10 +126,9 @@ def main() -> None:
         "VW_DATA_QUALITY_CHECKS": dq,
     }
     for name, df in outputs.items():
-        df.columns = [c.upper() for c in df.columns]  # Snowflake returns upper-case column names
+        df.columns = [c.upper() for c in df.columns]  # match Snowflake's column names
         df.to_csv(POWERBI_DATA_DIR / f"{name}.csv", index=False)
         print(f"{name}.csv: {len(df):,} rows")
-    print(f"Files written to {POWERBI_DATA_DIR}")
 
 
 if __name__ == "__main__":
