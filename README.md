@@ -1,5 +1,7 @@
 # Aircraft Engine Maintenance Analytics
 
+[![tests](https://github.com/SabaTamizi-eng/aircraft-engine-maintenance-analytics/actions/workflows/tests.yml/badge.svg)](https://github.com/SabaTamizi-eng/aircraft-engine-maintenance-analytics/actions/workflows/tests.yml)
+
 Predictive maintenance analytics on NASA's turbofan engine simulation data (C-MAPSS).
 Sensor data is loaded into Snowflake, modelled as a star schema, kept up to date with
 streams and tasks, and reported in Power BI. A random forest model estimates how many
@@ -69,6 +71,8 @@ python -m pipeline.download_data
 python -m pipeline.transform
 python -m ml.train_rul_model
 python -m pipeline.export_powerbi_extract   # local CSVs for Power BI
+
+python -m pytest                            # unit tests (also run by GitHub Actions)
 ```
 
 In Snowflake, run the files in `sql/` in order (`00` to `06`). Then copy `.env.example`
@@ -92,6 +96,7 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 ```text
 pipeline/  download, transform, Snowflake loading, feed simulator, Power BI extract
 ml/        RUL model and metrics
+tests/     unit tests
 sql/       Snowflake scripts, in run order
 powerbi/   Power Query, DAX measures, theme
 docs/      data model and sensor list
