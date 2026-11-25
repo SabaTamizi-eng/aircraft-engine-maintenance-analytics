@@ -84,6 +84,15 @@ table 'Engine Health'
 
 		annotation SummarizationSetBy = Automatic
 
+	column ACTUAL_RUL_AT_PREDICTION
+		dataType: double
+		formatString: 0
+		lineageTag: 5080d731-5c8a-578a-8f0e-7b64c1631795
+		summarizeBy: none
+		sourceColumn: ACTUAL_RUL_AT_PREDICTION
+
+		annotation SummarizationSetBy = Automatic
+
 	column PREDICTION_ERROR
 		dataType: double
 		formatString: 0.0
@@ -107,7 +116,7 @@ table 'Engine Health'
 		source =
 				let
 				    Source = fnLoadTable("VW_ENGINE_CURRENT_HEALTH"),
-				    Selected = Table.SelectColumns(Source, {"ENGINE_KEY", "FLEET_ID", "DATASET_SPLIT", "ENGINE_LIFECYCLE", "CURRENT_CYCLE", "ACTUAL_RUL", "HEALTH_STATUS", "PREDICTED_RUL", "MODEL_NAME", "MODEL_VERSION", "PREDICTION_ERROR"}),
+				    Selected = Table.SelectColumns(Source, {"ENGINE_KEY", "FLEET_ID", "DATASET_SPLIT", "ENGINE_LIFECYCLE", "CURRENT_CYCLE", "ACTUAL_RUL", "HEALTH_STATUS", "PREDICTED_RUL", "MODEL_NAME", "MODEL_VERSION", "ACTUAL_RUL_AT_PREDICTION", "PREDICTION_ERROR"}),
 				    WithSort = Table.AddColumn(Selected, "HEALTH_SORT", each if [HEALTH_STATUS] = "Critical" then 1 else if [HEALTH_STATUS] = "Warning" then 2 else 3, Int64.Type)
 				in
 				    WithSort

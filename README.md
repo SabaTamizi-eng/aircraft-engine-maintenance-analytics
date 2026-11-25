@@ -44,6 +44,9 @@ The data model is described in [docs/data_model.md](docs/data_model.md).
 - Baseline RUL model on fleet FD001: RMSE 20.1 cycles, MAE 14.6 cycles, and 70% of
   engines within 20 cycles of the true RUL ([metrics](ml/metrics_fd001.json)).
 - Of the 707 in-service engines, 159 (22.5%) are within 30 cycles of failure.
+- Running on a Snowflake trial: 243,059 engine cycles loaded through the stream and task
+  (including three simulated live batches), 8 of 8 data quality checks passing, and the
+  masking and row access policies return different results per role, as intended.
 
 ## Dashboard
 
@@ -73,6 +76,10 @@ model and report are plain text in Git.
   roles, so a user who has all three project roles would always see unmasked data.
 - **Serial numbers are synthetic.** The dataset doesn't have any; they exist to test the
   masking policy.
+- **Key-pair authentication for scripts.** The Python scripts sign in with an RSA key
+  pair, because password sign-in needs an MFA code on every run. If the account was
+  created through Google or Microsoft sign-in, the connector needs the user's
+  `LOGIN_NAME` (often the email address), not the user name.
 
 ## Running it
 
@@ -90,10 +97,12 @@ python -m pipeline.export_powerbi_extract   # local CSVs for Power BI
 python -m pytest                            # unit tests (also run by GitHub Actions)
 ```
 
-In Snowflake, run the files in `sql/` in order (`00` to `06`). Then copy `.env.example`
-to `.env`, fill it in, and load the data:
+For Snowflake, register an RSA public key for your user
+([key-pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth)),
+copy `.env.example` to `.env` and fill it in, then:
 
 ```bash
+python -m pipeline.run_sql                                  # sql/00 to sql/06, in order
 python -m pipeline.load_snowflake --initial --predictions
 python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 ```
@@ -102,7 +111,7 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 
 ## To do
 
-- Run the full pipeline on a Snowflake trial account and switch the report to Snowflake
+- Point the Power BI report at Snowflake (it reads the local CSV extract today)
 - Try a model for the six-condition fleets (FD002, FD004)
 - Record a short demo of the report
 

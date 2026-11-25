@@ -1,5 +1,6 @@
 """Snowflake connection + PUT/COPY helper."""
 import os
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,22 +11,29 @@ STAGE = "RAW.ENGINE_STAGE"
 FILE_FORMAT = "RAW.CSV_FF"
 
 
-def connect():
+def connect(role=None, use_defaults=True):
+    """Connect with the settings in .env. use_defaults=False skips the warehouse and
+    database (needed before sql/00_setup.sql has created them)."""
     import snowflake.connector  # only needed for the Snowflake steps
 
+    warnings.filterwarnings("ignore", category=FutureWarning, module="snowflake")
     load_dotenv(ROOT / ".env")
     params = {
         "account": os.environ["SNOWFLAKE_ACCOUNT"],
         "user": os.environ["SNOWFLAKE_USER"],
-        "role": os.getenv("SNOWFLAKE_ROLE", "ENGINE_ENGINEER"),
-        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE", "ENGINE_WH"),
-        "database": os.getenv("SNOWFLAKE_DATABASE", "ENGINE_ANALYTICS"),
+        "role": role or os.getenv("SNOWFLAKE_ROLE", "ENGINE_ENGINEER"),
     }
-    auth = os.getenv("SNOWFLAKE_AUTHENTICATOR", "externalbrowser").lower()
-    if auth == "snowflake_jwt":
+    if use_defaults:
+        params["warehouse"] = os.getenv("SNOWFLAKE_WAREHOUSE", "ENGINE_WH")
+        params["database"] = os.getenv("SNOWFLAKE_DATABASE", "ENGINE_ANALYTICS")
+
+    auth = os.getenv("SNOWFLAKE_AUTHENTICATOR", "snowflake_jwt").lower()
+    if auth == "snowflake_jwt":  # key-pair, works for scripts on MFA-enabled users
         params["authenticator"] = "SNOWFLAKE_JWT"
-        params["private_key_file"] = os.environ["SNOWFLAKE_PRIVATE_KEY_FILE"]
-    elif auth == "snowflake":
+        params["private_key_file"] = os.path.expanduser(os.environ["SNOWFLAKE_PRIVATE_KEY_FILE"])
+        if os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSWORD"):
+            params["private_key_password"] = os.environ["SNOWFLAKE_PRIVATE_KEY_PASSWORD"]
+    elif auth == "snowflake":  # password or programmatic access token
         params["password"] = os.environ["SNOWFLAKE_PASSWORD"]
     else:
         params["authenticator"] = auth
@@ -38,7 +46,7 @@ def put_and_copy(cursor, csv_path: Path, stage_folder: str, table: str, columns:
 
     COPY skips files it has already loaded (unless force=True), so re-runs are safe.
     """
-    stage_path = f"{STAGE}/{stage_folder}"
+    stage_path = f"{STAGE}/{stage_folder}/"  # trailing slash: COPY appends FILES names to this path
     cursor.execute(
         f"PUT 'file://{csv_path.resolve().as_posix()}' @{stage_path} AUTO_COMPRESS=TRUE OVERWRITE=TRUE"
     )

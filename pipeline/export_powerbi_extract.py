@@ -92,10 +92,12 @@ def main() -> None:
         ).drop(columns="cycle")
     else:
         current[["predicted_rul", "model_name", "model_version"]] = np.nan
-    current["prediction_error"] = current["predicted_rul"] - current["actual_rul"]
+    # predictions are made at the last cycle, which is the current cycle in the full data
+    current["actual_rul_at_prediction"] = current["actual_rul"].where(current["predicted_rul"].notna())
+    current["prediction_error"] = current["predicted_rul"] - current["actual_rul_at_prediction"]
     current = current[["engine_key", "fleet_id", "dataset_split", "engine_lifecycle", "current_cycle",
                        "actual_rul", "health_status", "predicted_rul", "model_name", "model_version",
-                       "prediction_error"]]
+                       "actual_rul_at_prediction", "prediction_error"]]
 
     # subset of the checks in sql/06
     per_engine = rul.groupby("engine_key")["cycle"].agg(["min", "max", "count"])
