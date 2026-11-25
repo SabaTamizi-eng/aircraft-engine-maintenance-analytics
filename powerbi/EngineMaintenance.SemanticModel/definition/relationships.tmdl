@@ -1,0 +1,20 @@
+relationship eff20c3d-8946-5e5e-97f5-f98d39dc2d72
+	fromColumn: Engine.FLEET_ID
+	toColumn: Fleet.FLEET_ID
+
+relationship 1058335f-b130-5d15-963d-60c67a0d728f
+	fromColumn: 'Engine Cycles'.ENGINE_KEY
+	toColumn: Engine.ENGINE_KEY
+
+relationship fca4b47a-0a8a-57f3-97a5-0c031e476729
+	fromColumn: 'Engine Health'.ENGINE_KEY
+	toColumn: Engine.ENGINE_KEY
+
+relationship 8b20c85c-304d-58fd-b4af-63f77b1950c7
+	fromColumn: 'Sensor Readings'.ENGINE_KEY
+	toColumn: Engine.ENGINE_KEY
+
+relationship 3ce650a5-f892-57e6-96c2-6c01c0be7a4f
+	fromColumn: 'Sensor Readings'.SENSOR_ID
+	toColumn: Sensor.SENSOR_ID
+

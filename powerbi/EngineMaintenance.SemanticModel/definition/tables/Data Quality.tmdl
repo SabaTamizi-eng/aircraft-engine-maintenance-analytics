@@ -1,0 +1,53 @@
+table 'Data Quality'
+	lineageTag: 1b4a2575-b3ed-5cd5-af58-088f5e355fd7
+
+	column CHECK_NAME
+		dataType: string
+		lineageTag: 2629cf47-8120-568b-b316-995c65901008
+		summarizeBy: none
+		sourceColumn: CHECK_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column CATEGORY
+		dataType: string
+		lineageTag: a7c7deab-e8f1-52b3-9e52-16014ae3e7ff
+		summarizeBy: none
+		sourceColumn: CATEGORY
+
+		annotation SummarizationSetBy = Automatic
+
+	column FAILING_ROWS
+		dataType: int64
+		lineageTag: 01af00e7-d6cc-58cb-bc0d-c5dfc9e8beb9
+		summarizeBy: none
+		sourceColumn: FAILING_ROWS
+
+		annotation SummarizationSetBy = Automatic
+
+	column STATUS
+		dataType: string
+		lineageTag: 9a70fb95-ccbf-576d-b23b-cb98d8a366ff
+		summarizeBy: none
+		sourceColumn: STATUS
+
+		annotation SummarizationSetBy = Automatic
+
+	column CHECKED_AT
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 190f72cb-01d6-53f1-9b0e-a8706ec76f1d
+		summarizeBy: none
+		sourceColumn: CHECKED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Data Quality' = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("VW_DATA_QUALITY_CHECKS"),
+				    Selected = Table.SelectColumns(Source, {"CHECK_NAME", "CATEGORY", "FAILING_ROWS", "STATUS", "CHECKED_AT"})
+				in
+				    Selected
+

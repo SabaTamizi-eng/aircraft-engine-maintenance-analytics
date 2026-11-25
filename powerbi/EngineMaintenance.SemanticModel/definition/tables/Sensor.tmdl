@@ -1,0 +1,52 @@
+table Sensor
+	lineageTag: b0820c40-ccd1-5933-a561-f4b4e97598dc
+
+	column SENSOR_ID
+		dataType: int64
+		lineageTag: 372049c7-04b9-56fb-b7c9-22d505e55d1d
+		summarizeBy: none
+		sourceColumn: SENSOR_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SENSOR_SYMBOL
+		dataType: string
+		lineageTag: 880de7c9-0720-59b8-8f05-b3bef02802ad
+		summarizeBy: none
+		sourceColumn: SENSOR_SYMBOL
+
+		annotation SummarizationSetBy = Automatic
+
+	column SENSOR_DESCRIPTION
+		dataType: string
+		lineageTag: e48ea95d-68c6-5d7d-b90f-9a358e57dc2d
+		summarizeBy: none
+		sourceColumn: SENSOR_DESCRIPTION
+
+		annotation SummarizationSetBy = Automatic
+
+	column UNIT_OF_MEASURE
+		dataType: string
+		lineageTag: 224d93ad-ab98-5e71-97a5-ade8074b22ec
+		summarizeBy: none
+		sourceColumn: UNIT_OF_MEASURE
+
+		annotation SummarizationSetBy = Automatic
+
+	column USED_IN_BASELINE_MODEL
+		dataType: boolean
+		lineageTag: 1d4b3f40-00a1-54c0-9d06-96a4bdaf9da8
+		summarizeBy: none
+		sourceColumn: USED_IN_BASELINE_MODEL
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Sensor = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("DIM_SENSOR"),
+				    Selected = Table.SelectColumns(Source, {"SENSOR_ID", "SENSOR_SYMBOL", "SENSOR_DESCRIPTION", "UNIT_OF_MEASURE", "USED_IN_BASELINE_MODEL"})
+				in
+				    Selected
+

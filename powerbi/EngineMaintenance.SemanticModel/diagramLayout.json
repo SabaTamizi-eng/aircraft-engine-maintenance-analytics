@@ -1,0 +1,126 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 1188.7620182291084,
+            "y": 279.8843777282284
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "ffa8d3c9-396a-5ecd-8992-6fce3596cd34",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1472.7620182291084,
+            "y": 329.8843777282284
+          },
+          "nodeIndex": "Data Quality",
+          "nodeLineageTag": "1b4a2575-b3ed-5cd5-af58-088f5e355fd7",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 625.37149574800151,
+            "y": 306.5016216450266
+          },
+          "nodeIndex": "Engine",
+          "nodeLineageTag": "2aba2841-c68a-54ee-a662-947181a28462",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 954.76201822910855,
+            "y": 330.29071179589596
+          },
+          "nodeIndex": "Engine Cycles",
+          "nodeLineageTag": "cca1a8ad-d24f-51af-9228-11bcc00d0844",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 724.93192168867893,
+            "y": -50
+          },
+          "nodeIndex": "Engine Health",
+          "nodeLineageTag": "a33f7f17-9f34-5d6d-904f-e6719222a06c",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 692.76737286264108,
+            "y": 585.7687554564568
+          },
+          "nodeIndex": "Fleet",
+          "nodeLineageTag": "7393fb96-112a-51cb-8ef7-0e68ff8a61df",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 298.21313499259685
+          },
+          "nodeIndex": "Sensor",
+          "nodeLineageTag": "b0820c40-ccd1-5933-a561-f4b4e97598dc",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 336.26994376764452,
+            "y": 352.01323604641334
+          },
+          "nodeIndex": "Sensor Readings",
+          "nodeLineageTag": "e80d9e69-61a6-5707-b275-a197d175e1b7",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}
