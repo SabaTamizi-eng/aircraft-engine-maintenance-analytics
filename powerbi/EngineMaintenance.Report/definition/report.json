@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.4.0/schema.json",
+  "themeCollection": {
+    "customTheme": {
+      "name": "EngineMaintenanceTheme.json",
+      "reportVersionAtImport": {
+        "visual": "1.8.79",
+        "report": "2.0.79",
+        "page": "1.3.79"
+      },
+      "type": "RegisteredResources"
+    }
+  },
+  "resourcePackages": [
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "EngineMaintenanceTheme.json",
+          "path": "EngineMaintenanceTheme.json",
+          "type": "CustomTheme"
+        },
+        {
+          "name": "bg_fleet.png",
+          "path": "bg_fleet.png",
+          "type": "Image"
+        },
+        {
+          "name": "bg_engine.png",
+          "path": "bg_engine.png",
+          "type": "Image"
+        },
+        {
+          "name": "bg_reliability.png",
+          "path": "bg_reliability.png",
+          "type": "Image"
+        },
+        {
+          "name": "bg_model.png",
+          "path": "bg_model.png",
+          "type": "Image"
+        },
+        {
+          "name": "bg_quality.png",
+          "path": "bg_quality.png",
+          "type": "Image"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "useStylableVisualContainerHeader": true,
+    "exportDataMode": "AllowSummarized",
+    "defaultDrillFilterOtherVisuals": true,
+    "useEnhancedTooltips": false
+  },
+  "linguisticSchemaSyncVersion": 2
+}

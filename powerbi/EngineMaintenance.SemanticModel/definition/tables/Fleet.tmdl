@@ -1,0 +1,60 @@
+table Fleet
+	lineageTag: 7393fb96-112a-51cb-8ef7-0e68ff8a61df
+
+	column FLEET_ID
+		dataType: string
+		lineageTag: 3004673e-0cc9-5751-9712-f5b1803383a4
+		summarizeBy: none
+		sourceColumn: FLEET_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column FLEET_NAME
+		dataType: string
+		lineageTag: 281f5c0c-1c6c-53f7-941e-cafce7f089de
+		summarizeBy: none
+		sourceColumn: FLEET_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column OPERATING_CONDITIONS
+		dataType: int64
+		lineageTag: c970e041-c1dd-5dc3-88c0-f6cd303be48d
+		summarizeBy: none
+		sourceColumn: OPERATING_CONDITIONS
+
+		annotation SummarizationSetBy = Automatic
+
+	column OPERATING_CONDITION_DESC
+		dataType: string
+		lineageTag: 2a40a4ac-8812-564d-b117-ee56d5a047e6
+		summarizeBy: none
+		sourceColumn: OPERATING_CONDITION_DESC
+
+		annotation SummarizationSetBy = Automatic
+
+	column FAULT_MODES
+		dataType: string
+		lineageTag: 81ad9713-cef9-5fa6-bb63-563ff9b3c80d
+		summarizeBy: none
+		sourceColumn: FAULT_MODES
+
+		annotation SummarizationSetBy = Automatic
+
+	column FAULT_MODE_COUNT
+		dataType: int64
+		lineageTag: 6cfbe813-669a-5b04-bcfa-e8e37e2b5df7
+		summarizeBy: none
+		sourceColumn: FAULT_MODE_COUNT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Fleet = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("DIM_FLEET"),
+				    Selected = Table.SelectColumns(Source, {"FLEET_ID", "FLEET_NAME", "OPERATING_CONDITIONS", "OPERATING_CONDITION_DESC", "FAULT_MODES", "FAULT_MODE_COUNT"})
+				in
+				    Selected
+

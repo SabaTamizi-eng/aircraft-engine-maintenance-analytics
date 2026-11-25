@@ -1,0 +1,54 @@
+table 'Engine Cycles'
+	lineageTag: cca1a8ad-d24f-51af-9228-11bcc00d0844
+
+	column ENGINE_KEY
+		dataType: string
+		isHidden
+		lineageTag: 53a46ed1-ce5c-504f-93d4-f1e2e9dd4952
+		summarizeBy: none
+		sourceColumn: ENGINE_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column FLEET_ID
+		dataType: string
+		isHidden
+		lineageTag: 2282cfc0-8f4c-510d-b552-5449b5317549
+		summarizeBy: none
+		sourceColumn: FLEET_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CYCLE
+		dataType: int64
+		lineageTag: ab140360-f340-5cdb-b632-5f67ed3c4731
+		summarizeBy: none
+		sourceColumn: CYCLE
+
+		annotation SummarizationSetBy = Automatic
+
+	column ACTUAL_RUL
+		dataType: int64
+		lineageTag: f0d21c7d-7838-57a0-abb3-7f87f507f4fc
+		summarizeBy: none
+		sourceColumn: ACTUAL_RUL
+
+		annotation SummarizationSetBy = Automatic
+
+	column HEALTH_STATUS
+		dataType: string
+		lineageTag: e7a06c14-a8d9-5b57-a9ff-373637cfaad9
+		summarizeBy: none
+		sourceColumn: HEALTH_STATUS
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Engine Cycles' = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("VW_ENGINE_CYCLE_RUL"),
+				    Selected = Table.SelectColumns(Source, {"ENGINE_KEY", "FLEET_ID", "CYCLE", "ACTUAL_RUL", "HEALTH_STATUS"})
+				in
+				    Selected
+

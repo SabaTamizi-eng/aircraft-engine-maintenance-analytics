@@ -1,0 +1,114 @@
+table 'Engine Health'
+	lineageTag: a33f7f17-9f34-5d6d-904f-e6719222a06c
+
+	column ENGINE_KEY
+		dataType: string
+		lineageTag: c0ac85ff-706e-56bc-9ef1-8e55f6872c6b
+		summarizeBy: none
+		sourceColumn: ENGINE_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column FLEET_ID
+		dataType: string
+		isHidden
+		lineageTag: b2159730-5a3e-520e-8b07-e375d3734122
+		summarizeBy: none
+		sourceColumn: FLEET_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column DATASET_SPLIT
+		dataType: string
+		lineageTag: 7941e2d0-640a-53a4-a1eb-15af92790f46
+		summarizeBy: none
+		sourceColumn: DATASET_SPLIT
+
+		annotation SummarizationSetBy = Automatic
+
+	column ENGINE_LIFECYCLE
+		dataType: string
+		lineageTag: f256c875-6c58-5b14-9036-d7abbab2940c
+		summarizeBy: none
+		sourceColumn: ENGINE_LIFECYCLE
+
+		annotation SummarizationSetBy = Automatic
+
+	column CURRENT_CYCLE
+		dataType: int64
+		lineageTag: 33f28bd1-e9cc-54d8-9ed0-b57faa62880d
+		summarizeBy: none
+		sourceColumn: CURRENT_CYCLE
+
+		annotation SummarizationSetBy = Automatic
+
+	column ACTUAL_RUL
+		dataType: int64
+		lineageTag: 1bccc141-f8cd-5c45-a162-6c7a20a7538e
+		summarizeBy: none
+		sourceColumn: ACTUAL_RUL
+
+		annotation SummarizationSetBy = Automatic
+
+	column HEALTH_STATUS
+		dataType: string
+		lineageTag: f4d9f8e1-75b1-52c5-98c4-c1861e28bc30
+		summarizeBy: none
+		sourceColumn: HEALTH_STATUS
+		sortByColumn: HEALTH_SORT
+
+		annotation SummarizationSetBy = Automatic
+
+	column PREDICTED_RUL
+		dataType: double
+		formatString: 0.0
+		lineageTag: d08dcb88-4feb-5884-b90b-5c45696b3448
+		summarizeBy: none
+		sourceColumn: PREDICTED_RUL
+
+		annotation SummarizationSetBy = Automatic
+
+	column MODEL_NAME
+		dataType: string
+		lineageTag: 5d7cb645-ca30-5568-a785-f8fd723187a9
+		summarizeBy: none
+		sourceColumn: MODEL_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column MODEL_VERSION
+		dataType: string
+		lineageTag: 1dda897b-231e-5abc-a8e5-20b8b6dc4b3e
+		summarizeBy: none
+		sourceColumn: MODEL_VERSION
+
+		annotation SummarizationSetBy = Automatic
+
+	column PREDICTION_ERROR
+		dataType: double
+		formatString: 0.0
+		lineageTag: c94bbcaa-f205-50ff-8ff6-d662c1603e0b
+		summarizeBy: none
+		sourceColumn: PREDICTION_ERROR
+
+		annotation SummarizationSetBy = Automatic
+
+	column HEALTH_SORT
+		dataType: int64
+		isHidden
+		lineageTag: 4a690054-0a11-5d3c-a5d2-e1981e804fd9
+		summarizeBy: none
+		sourceColumn: HEALTH_SORT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Engine Health' = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("VW_ENGINE_CURRENT_HEALTH"),
+				    Selected = Table.SelectColumns(Source, {"ENGINE_KEY", "FLEET_ID", "DATASET_SPLIT", "ENGINE_LIFECYCLE", "CURRENT_CYCLE", "ACTUAL_RUL", "HEALTH_STATUS", "PREDICTED_RUL", "MODEL_NAME", "MODEL_VERSION", "PREDICTION_ERROR"}),
+				    WithSort = Table.AddColumn(Selected, "HEALTH_SORT", each if [HEALTH_STATUS] = "Critical" then 1 else if [HEALTH_STATUS] = "Warning" then 2 else 3, Int64.Type)
+				in
+				    WithSort
+

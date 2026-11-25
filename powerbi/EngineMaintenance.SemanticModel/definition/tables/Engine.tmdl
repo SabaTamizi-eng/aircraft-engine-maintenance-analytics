@@ -1,0 +1,61 @@
+table Engine
+	lineageTag: 2aba2841-c68a-54ee-a662-947181a28462
+
+	column ENGINE_KEY
+		dataType: string
+		lineageTag: 31195668-4d56-5d14-909b-1cbc51ee39dc
+		summarizeBy: none
+		sourceColumn: ENGINE_KEY
+
+		annotation SummarizationSetBy = Automatic
+
+	column ENGINE_SERIAL_NUMBER
+		dataType: string
+		lineageTag: a41a62cf-6e8b-572a-81bf-1ec03680d909
+		summarizeBy: none
+		sourceColumn: ENGINE_SERIAL_NUMBER
+
+		annotation SummarizationSetBy = Automatic
+
+	column FLEET_ID
+		dataType: string
+		isHidden
+		lineageTag: 066b0202-0752-5e5e-b22a-0ae9957c153d
+		summarizeBy: none
+		sourceColumn: FLEET_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column DATASET_SPLIT
+		dataType: string
+		lineageTag: c845ec39-10d2-5211-aea2-7309c7c7c562
+		summarizeBy: none
+		sourceColumn: DATASET_SPLIT
+
+		annotation SummarizationSetBy = Automatic
+
+	column UNIT_NUMBER
+		dataType: int64
+		lineageTag: bf39b1c1-3a63-5f4c-84a4-c53c7205b708
+		summarizeBy: none
+		sourceColumn: UNIT_NUMBER
+
+		annotation SummarizationSetBy = Automatic
+
+	column ENGINE_LIFECYCLE
+		dataType: string
+		lineageTag: c47987ef-9aa4-51be-8cd5-ad42dad44d1b
+		summarizeBy: none
+		sourceColumn: ENGINE_LIFECYCLE
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Engine = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadTable("DIM_ENGINE"),
+				    Selected = Table.SelectColumns(Source, {"ENGINE_KEY", "ENGINE_SERIAL_NUMBER", "FLEET_ID", "DATASET_SPLIT", "UNIT_NUMBER", "ENGINE_LIFECYCLE"})
+				in
+				    Selected
+

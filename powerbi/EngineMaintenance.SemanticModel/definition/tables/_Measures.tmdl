@@ -1,0 +1,299 @@
+table _Measures
+	lineageTag: ffa8d3c9-396a-5ecd-8992-6fce3596cd34
+
+	measure 'Engines In Service' =
+			CALCULATE (
+			    DISTINCTCOUNT ( 'Engine Health'[ENGINE_KEY] ),
+			    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+			)
+		formatString: #,0
+		displayFolder: Fleet health
+		lineageTag: 13ac607b-8931-592f-95df-3c285c20cce1
+
+	measure 'Critical Engines' = CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Critical" )
+		formatString: #,0
+		displayFolder: Fleet health
+		lineageTag: bc5017ed-cce4-564a-93ef-780a6492789c
+
+	measure 'Warning Engines' = CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Warning" )
+		formatString: #,0
+		displayFolder: Fleet health
+		lineageTag: da874039-b7d5-58f9-9bf1-7989f474c9be
+
+	measure 'Healthy Engines' = CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Healthy" )
+		formatString: #,0
+		displayFolder: Fleet health
+		lineageTag: 227c0752-c655-598c-b01e-bfe141aabc91
+
+	measure '% Engines Critical' = DIVIDE ( [Critical Engines], [Engines In Service] )
+		formatString: 0.0%
+		displayFolder: Fleet health
+		lineageTag: de82a5d0-afb5-542e-82e1-a42bf71db55a
+
+	measure 'Avg Remaining Useful Life (cycles)' =
+			CALCULATE (
+			    AVERAGE ( 'Engine Health'[ACTUAL_RUL] ),
+			    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+			)
+		formatString: #,0
+		displayFolder: Fleet health
+		lineageTag: 1d02be9e-9ce2-5611-8d3a-97ebbf04c2bb
+
+	measure 'Avg Cycles to Failure' =
+			AVERAGEX (
+			    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+			    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+			)
+		formatString: #,0
+		displayFolder: Reliability
+		lineageTag: 6ed86b13-af19-5c35-b99f-4b38d702ba2c
+
+	measure 'Shortest Life (cycles)' =
+			MINX (
+			    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+			    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+			)
+		formatString: #,0
+		displayFolder: Reliability
+		lineageTag: 2ba359ae-f7ea-53c7-a84b-2daa93d0f83f
+
+	measure 'Engines With Prediction' =
+			CALCULATE (
+			    COUNTROWS ( 'Engine Health' ),
+			    NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+			)
+		formatString: #,0
+		displayFolder: Model
+		lineageTag: ff42779a-ce22-5236-9b8b-0119600bba90
+
+	measure 'Actual RUL (cycles)' = AVERAGE ( 'Engine Health'[ACTUAL_RUL] )
+		formatString: 0.0
+		displayFolder: Model
+		lineageTag: 46e6ca89-5561-5f61-8542-a8c1b02681d2
+
+	measure 'Predicted RUL (cycles)' = AVERAGE ( 'Engine Health'[PREDICTED_RUL] )
+		formatString: 0.0
+		displayFolder: Model
+		lineageTag: f2c0b911-ca95-50ca-818b-f4b5977553b0
+
+	measure 'RUL RMSE (cycles)' =
+			VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+			RETURN
+			    IF (
+			        COUNTROWS ( Scored ) > 0,
+			        SQRT ( AVERAGEX ( Scored, ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) ^ 2 ) )
+			    )
+		formatString: 0.0
+		displayFolder: Model
+		lineageTag: fa994417-9f5e-5235-ae9e-ae9f9bf2f649
+
+	measure 'RUL MAE (cycles)' =
+			VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+			RETURN
+			    AVERAGEX ( Scored, ABS ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) )
+		formatString: 0.0
+		displayFolder: Model
+		lineageTag: daa488bc-c570-5316-a7e3-e11c04f80b64
+
+	measure '% Predictions Within 20 Cycles' =
+			VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+			RETURN
+			    DIVIDE (
+			        COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
+			        COUNTROWS ( Scored )
+			    )
+		formatString: 0%
+		displayFolder: Model
+		lineageTag: 53c67b5e-4324-5755-8c3c-08aa5fb113d3
+
+	measure 'Late Predictions (over 10 cycles)' =
+			COUNTROWS (
+			    FILTER (
+			        'Engine Health',
+			        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+			            && 'Engine Health'[PREDICTION_ERROR] > 10
+			    )
+			) + 0
+		formatString: #,0
+		displayFolder: Model
+		lineageTag: b6a3ff16-f455-5330-bd16-bdea2182fd35
+
+	measure 'Avg Sensor Reading' = AVERAGE ( 'Sensor Readings'[READING] )
+		formatString: #,0.00
+		displayFolder: Sensors
+		lineageTag: af3d5404-f88b-57dd-88ca-032c1528e2c1
+
+	measure 'Sensor Change vs Early Life %' =
+			VAR Baseline =
+			    CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
+			RETURN
+			    DIVIDE ( [Avg Sensor Reading] - Baseline, Baseline )
+		formatString: 0.00%
+		displayFolder: Sensors
+		lineageTag: f2acaf88-82ef-51e3-8db1-07d36c2452d0
+
+	measure 'Remaining Life (cycles)' = AVERAGE ( 'Engine Cycles'[ACTUAL_RUL] )
+		formatString: #,0
+		displayFolder: Engine detail
+		lineageTag: 6ac3d9fc-d092-56da-a970-1bc8ce284fac
+
+	measure 'Cycles Recorded' = MAX ( 'Engine Cycles'[CYCLE] )
+		formatString: #,0
+		displayFolder: Engine detail
+		lineageTag: 2fcce408-45f0-555b-b8ff-bcfc89a960b6
+
+	measure 'Selected Engine Serial' = SELECTEDVALUE ( 'Engine'[ENGINE_SERIAL_NUMBER], "Select one engine" )
+		displayFolder: Engine detail
+		lineageTag: bd0320f8-a295-55fe-aa4c-b9c04566a209
+
+	measure 'Current Health Status' = SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS], "-" )
+		displayFolder: Engine detail
+		lineageTag: f9801369-28c4-595e-b15b-bab1aedd826f
+
+	measure 'Health Status Color' =
+			SWITCH (
+			    SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ),
+			    "Critical", "#F4C7C3",
+			    "Warning", "#FBE3B5",
+			    "Healthy", "#CDEBDC"
+			)
+		displayFolder: Engine detail
+		lineageTag: 922f3984-3244-59cc-a6e3-60ad19240d92
+
+	measure 'DQ Checks Passed' = CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[STATUS] = "PASS" ) + 0
+		formatString: #,0
+		displayFolder: Data quality
+		lineageTag: 68bc8563-bde3-53d2-ab06-f20c733099ce
+
+	measure 'DQ Pass Rate' = DIVIDE ( [DQ Checks Passed], COUNTROWS ( 'Data Quality' ) )
+		formatString: 0%
+		displayFolder: Data quality
+		lineageTag: dc849626-ccb2-5379-8fc6-19d4d9ec4e85
+
+	measure 'Last Data Check' = MAX ( 'Data Quality'[CHECKED_AT] )
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Data quality
+		lineageTag: 866ea1d8-6b38-5bfc-adae-c7a354ff9557
+
+	measure 'Selected Fleet' = VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] ) RETURN IF ( ISBLANK ( FleetId ), "All fleets", FleetId )
+		displayFolder: Engine detail
+		lineageTag: a63088a3-1d3c-59af-9ae8-950f32a684ea
+
+	measure 'Run-to-Failure Engines' = CALCULATE ( DISTINCTCOUNT ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" )
+		formatString: #,0
+		displayFolder: Reliability
+		lineageTag: 3496655c-c2a9-5dff-957f-68252a67a5ff
+
+	measure 'Fleets Label' = "Across " & CALCULATE ( DISTINCTCOUNT ( 'Engine Health'[FLEET_ID] ), 'Engine Health'[ENGINE_LIFECYCLE] = "In service" ) & " fleets"
+		displayFolder: Labels
+		lineageTag: d9cf17b6-57f8-55c6-930a-185525d75b79
+
+	measure 'Critical Share Label' = FORMAT ( [% Engines Critical], "0.0%" ) & " of in-service engines"
+		displayFolder: Labels
+		lineageTag: ca62efea-5eb1-55fd-9b15-496e6b6a6bf3
+
+	measure 'Warning Share Label' = FORMAT ( DIVIDE ( [Warning Engines], [Engines In Service] ), "0.0%" ) & " of in-service engines"
+		displayFolder: Labels
+		lineageTag: 1bf3a206-6f78-575c-bf38-b88154ae98c6
+
+	measure 'Healthy Label' = FORMAT ( [Healthy Engines], "#,0" ) & " engines above 75 cycles"
+		displayFolder: Labels
+		lineageTag: c97b4d71-d00b-5df2-be9c-4300a97df618
+
+	measure 'Data As Of Label' = "Data checked " & FORMAT ( [Last Data Check], "d mmm yyyy, hh:nn" )
+		displayFolder: Labels
+		lineageTag: 61f51a6b-777e-5df6-a6d6-c86059d3a582
+
+	measure 'Engine Key Label' = SELECTEDVALUE ( 'Engine'[ENGINE_KEY], "No engine selected" )
+		displayFolder: Labels
+		lineageTag: 562d2b96-822e-5e01-8401-d9c7c15bfc7f
+
+	measure 'Operating Profile Label' = VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] ) RETURN IF ( ISBLANK ( FleetId ), "Select one engine", LOOKUPVALUE ( 'Fleet'[OPERATING_CONDITION_DESC], 'Fleet'[FLEET_ID], FleetId ) & "  ·  " & LOOKUPVALUE ( 'Fleet'[FAULT_MODES], 'Fleet'[FLEET_ID], FleetId ) )
+		displayFolder: Labels
+		lineageTag: 25a13367-5cb6-5a87-ab31-442a511e09e9
+
+	measure 'Cycles Left Label' = "Cycles left: " & FORMAT ( MIN ( 'Engine Health'[ACTUAL_RUL] ), "#,0" )
+		displayFolder: Labels
+		lineageTag: 4b331544-4767-544b-a2af-dd61ca5b255d
+
+	measure 'Lifecycle Label' = SELECTEDVALUE ( 'Engine'[ENGINE_LIFECYCLE] )
+		displayFolder: Labels
+		lineageTag: 553db7f2-75f9-5c1c-8a25-e0b428c76e36
+
+	measure 'Run-to-Failure Fleets Label' = "Across " & CALCULATE ( DISTINCTCOUNT ( 'Engine'[FLEET_ID] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ) & " fleets"
+		displayFolder: Labels
+		lineageTag: ec1fd089-b7ad-5a47-a5ef-7b38ab8e7463
+
+	measure 'Median Life Label' = "Median " & FORMAT ( MEDIANX ( CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ), CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) ) ), "#,0" ) & " cycles"
+		displayFolder: Labels
+		lineageTag: 074d0cfc-87fd-5bf7-af99-2260da7c1750
+
+	measure 'Longest Life Label' = "Longest " & FORMAT ( MAXX ( CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ), CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) ) ), "#,0" ) & " cycles"
+		displayFolder: Labels
+		lineageTag: 70652d23-512f-51dd-bd10-b922e96bb0da
+
+	measure 'Scored Engines Label' = "On " & [Engines With Prediction] & " test engines"
+		displayFolder: Labels
+		lineageTag: a661cf1d-9aea-5ae1-8cf1-4f889df17ce0
+
+	measure 'Within 20 Label' = COUNTROWS ( FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ) & " of " & [Engines With Prediction] & " engines"
+		displayFolder: Labels
+		lineageTag: ac291077-9c89-51fe-82c6-038c8d0165af
+
+	measure 'Checks Label' = [DQ Checks Passed] & " of " & COUNTROWS ( 'Data Quality' ) & " checks passed"
+		displayFolder: Labels
+		lineageTag: c83441c7-9ae1-5836-ad25-7c4a7c429d99
+
+	measure 'Failing Rows Label' = "Failing rows: " & FORMAT ( SUM ( 'Data Quality'[FAILING_ROWS] ) + 0, "#,0" )
+		displayFolder: Labels
+		lineageTag: da47e780-4038-5ea5-b6b9-f6165892cc48
+
+	measure 'MAE Label' = "Average miss per engine"
+		displayFolder: Labels
+		lineageTag: 619bb387-7d4d-5c93-876b-823e7ec36830
+
+	measure 'Late Label' = "Predicted 10+ cycles too high"
+		displayFolder: Labels
+		lineageTag: 4f7d3b8d-e15f-5b14-b0c2-096d6b11f96f
+
+	measure 'Last Check Label' = "Runs after every load"
+		displayFolder: Labels
+		lineageTag: 0d2ab1ea-ae07-59e7-8fe3-2ad53534828f
+
+	measure 'Engine Cycles Loaded' = COUNTROWS ( 'Engine Cycles' )
+		formatString: #,0
+		displayFolder: Data quality
+		lineageTag: 38f6735f-e66f-59c2-b3f6-563324caedef
+
+	measure 'Engines Loaded' = COUNTROWS ( 'Engine' )
+		formatString: #,0
+		displayFolder: Data quality
+		lineageTag: 8a842548-9aee-544d-bd97-4085a3956cc2
+
+	measure 'Health Status Font Color' = SWITCH ( SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ), "Critical", "#9B2A1F", "Warning", "#8A5A00", "Healthy", "#1D6B45" )
+		displayFolder: Formatting
+		lineageTag: 46d23689-1023-584f-b4c8-d436aa900316
+
+	measure 'DQ Status Color' = IF ( SELECTEDVALUE ( 'Data Quality'[STATUS] ) = "PASS", "#D6F0E2", "#F6D3CF" )
+		displayFolder: Formatting
+		lineageTag: 159c3c11-172c-5ee8-9649-5a1ee634c7d0
+
+	measure 'DQ Status Font Color' = IF ( SELECTEDVALUE ( 'Data Quality'[STATUS] ) = "PASS", "#1D6B45", "#9B2A1F" )
+		displayFolder: Formatting
+		lineageTag: 0008c096-7c5f-5bfe-b7b6-3423ad66368f
+
+	column Measures
+		dataType: string
+		isHidden
+		lineageTag: f57434de-cd9f-5687-883f-74fc72ec0927
+		summarizeBy: none
+		sourceColumn: Measures
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Measures = text], {})
+				in
+				    Source
+
