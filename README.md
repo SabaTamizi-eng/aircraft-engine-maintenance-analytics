@@ -10,6 +10,8 @@ cycles each engine has left before it fails (remaining useful life, RUL).
 The question behind it is the one a maintenance planner deals with every week: which
 engines are closest to failure, and how much can we trust the estimate?
 
+![Fleet overview page of the Power BI report](docs/images/fleet-overview.png)
+
 ## How it works
 
 ```mermaid
@@ -41,6 +43,19 @@ The data model is described in [docs/data_model.md](docs/data_model.md).
   across four fleets.
 - Baseline RUL model on fleet FD001: RMSE 20.1 cycles, MAE 14.6 cycles, and 70% of
   engines within 20 cycles of the true RUL ([metrics](ml/metrics_fd001.json)).
+- Of the 707 in-service engines, 159 (22.5%) are within 30 cycles of failure.
+
+## Dashboard
+
+Five-page Power BI report ([powerbi/](powerbi/)), stored as a Power BI Project so the
+model and report are plain text in Git.
+
+| | |
+|---|---|
+| ![Engine detail](docs/images/engine-detail.png) | ![Reliability](docs/images/reliability.png) |
+| **Engine detail:** sensor drift and remaining life for one engine | **Reliability:** engine life by fleet and the sensors that change most |
+| ![Model performance](docs/images/model-performance.png) | ![Data quality](docs/images/data-quality.png) |
+| **Model performance:** predicted vs. actual RUL | **Data quality:** check results and data loaded |
 
 ## Notes
 
@@ -87,9 +102,9 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 
 ## To do
 
-- Run the full pipeline on a Snowflake trial account
-- Build the Power BI report (`.pbip`) and add screenshots
+- Run the full pipeline on a Snowflake trial account and switch the report to Snowflake
 - Try a model for the six-condition fleets (FD002, FD004)
+- Record a short demo of the report
 
 ## Layout
 
@@ -98,8 +113,8 @@ pipeline/  download, transform, Snowflake loading, feed simulator, Power BI extr
 ml/        RUL model and metrics
 tests/     unit tests
 sql/       Snowflake scripts, in run order
-powerbi/   Power Query, DAX measures, theme
-docs/      data model and sensor list
+powerbi/   Power BI project (.pbip): TMDL model, PBIR report, theme
+docs/      data model, sensor list, report screenshots
 data/      dataset source (data files are not committed)
 ```
 
