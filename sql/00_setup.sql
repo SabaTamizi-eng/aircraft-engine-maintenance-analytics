@@ -22,7 +22,8 @@ GRANT ROLE ENGINE_ANALYST      TO ROLE SYSADMIN;
 GRANT ROLE ENGINE_FLEET_VIEWER TO ROLE SYSADMIN;
 
 -- all three roles for the current user, so each one can be tested
-SET my_user = CURRENT_USER();
+-- quoted, so user names with @ or mixed case (e.g. from SSO sign-up) work too
+SET my_user = '"' || CURRENT_USER() || '"';
 GRANT ROLE ENGINE_ENGINEER     TO USER IDENTIFIER($my_user);
 GRANT ROLE ENGINE_ANALYST      TO USER IDENTIFIER($my_user);
 GRANT ROLE ENGINE_FLEET_VIEWER TO USER IDENTIFIER($my_user);

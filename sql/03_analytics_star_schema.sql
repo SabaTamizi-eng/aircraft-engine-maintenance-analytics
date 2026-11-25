@@ -125,12 +125,22 @@ FROM ENGINE_ANALYTICS.ANALYTICS.FACT_ENGINE_CYCLE f
 JOIN ENGINE_ANALYTICS.STAGING.STG_ENGINE_RUL_TRUTH t
   ON t.engine_key = f.engine_key;
 
--- latest cycle per engine, plus the prediction if there is one for that cycle
+-- latest cycle per engine, plus the engine's latest prediction. The error is measured
+-- against the actual RUL at the cycle the prediction was made for, so it is right even
+-- while the feed is still delivering cycles.
 CREATE OR REPLACE VIEW VW_ENGINE_CURRENT_HEALTH AS
 WITH latest AS (
     SELECT engine_key, fleet_id, cycle AS current_cycle, actual_rul, health_status
     FROM ENGINE_ANALYTICS.ANALYTICS.VW_ENGINE_CYCLE_RUL
     QUALIFY ROW_NUMBER() OVER (PARTITION BY engine_key ORDER BY cycle DESC) = 1
+),
+prediction AS (
+    SELECT p.engine_key, p.predicted_rul, p.model_name, p.model_version,
+           t.failure_cycle - p.cycle AS actual_rul_at_prediction
+    FROM ENGINE_ANALYTICS.STAGING.STG_RUL_PREDICTIONS p
+    JOIN ENGINE_ANALYTICS.STAGING.STG_ENGINE_RUL_TRUTH t
+      ON t.engine_key = p.engine_key
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY p.engine_key ORDER BY p.cycle DESC) = 1
 )
 SELECT
     l.engine_key,
@@ -143,13 +153,13 @@ SELECT
     p.predicted_rul,
     p.model_name,
     p.model_version,
-    p.predicted_rul - l.actual_rul AS prediction_error   -- > 0 means the model was too optimistic
+    p.actual_rul_at_prediction,
+    p.predicted_rul - p.actual_rul_at_prediction AS prediction_error   -- > 0 means too optimistic
 FROM latest l
 JOIN ENGINE_ANALYTICS.ANALYTICS.DIM_ENGINE d
   ON d.engine_key = l.engine_key
-LEFT JOIN ENGINE_ANALYTICS.STAGING.STG_RUL_PREDICTIONS p
-  ON p.engine_key = l.engine_key
- AND p.cycle = l.current_cycle;
+LEFT JOIN prediction p
+  ON p.engine_key = l.engine_key;
 
 -- one row per engine, cycle and sensor (easier to chart)
 CREATE OR REPLACE VIEW VW_SENSOR_READINGS_LONG AS
