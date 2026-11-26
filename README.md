@@ -14,16 +14,9 @@ engines are closest to failure, and how much can we trust the estimate?
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[NASA text files] --> B[Python: transform + validate]
-    B -->|PUT / COPY INTO| C[(RAW)]
-    S[Feed simulator] -->|new cycles| C
-    C -->|stream| D[Task + stored procedure]
-    D --> E[(ANALYTICS star schema)]
-    M[RUL model] -->|predictions| C
-    E --> F[Power BI]
-```
+![Architecture: NASA data, Python pipeline, Snowflake layers with change data capture, Power BI](docs/images/architecture.png)
+
+The numbers in the diagram match these steps:
 
 1. `pipeline/transform.py` parses the NASA files and checks them (engine counts, missing
    values, duplicate or missing cycles).
