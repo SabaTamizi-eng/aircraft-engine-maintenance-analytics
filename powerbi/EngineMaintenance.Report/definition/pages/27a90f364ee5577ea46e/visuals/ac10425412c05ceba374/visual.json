@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "RUL RMSE (cycles)"
+                  "Property": "RUL RMSE Near Failure (cycles)"
                 }
               },
-              "queryRef": "_Measures.RUL RMSE (cycles)",
-              "nativeQueryRef": "RUL RMSE (cycles)"
+              "queryRef": "_Measures.RUL RMSE Near Failure (cycles)",
+              "nativeQueryRef": "RUL RMSE Near Failure (cycles)"
             }
           ]
         }
@@ -93,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'RMSE (CYCLES)'"
+                  "Value": "'RMSE · ≤125 CYCLES LEFT'"
                 }
               }
             },

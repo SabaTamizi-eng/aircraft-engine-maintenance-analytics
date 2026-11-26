@@ -17,23 +17,13 @@
       "type": "RegisteredResources",
       "items": [
         {
-          "name": "EngineMaintenanceTheme.json",
-          "path": "EngineMaintenanceTheme.json",
-          "type": "CustomTheme"
-        },
-        {
-          "name": "bg_fleet.png",
-          "path": "bg_fleet.png",
-          "type": "Image"
-        },
-        {
           "name": "bg_engine.png",
           "path": "bg_engine.png",
           "type": "Image"
         },
         {
-          "name": "bg_reliability.png",
-          "path": "bg_reliability.png",
+          "name": "bg_fleet.png",
+          "path": "bg_fleet.png",
           "type": "Image"
         },
         {
@@ -45,6 +35,16 @@
           "name": "bg_quality.png",
           "path": "bg_quality.png",
           "type": "Image"
+        },
+        {
+          "name": "bg_reliability.png",
+          "path": "bg_reliability.png",
+          "type": "Image"
+        },
+        {
+          "name": "EngineMaintenanceTheme.json",
+          "path": "EngineMaintenanceTheme.json",
+          "type": "CustomTheme"
         }
       ]
     }

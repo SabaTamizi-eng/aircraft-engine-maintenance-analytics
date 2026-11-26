@@ -28,6 +28,7 @@
               },
               "queryRef": "Sensor.SENSOR_SYMBOL",
               "nativeQueryRef": "SENSOR_SYMBOL",
+              "active": true,
               "displayName": "Sensor"
             }
           ]

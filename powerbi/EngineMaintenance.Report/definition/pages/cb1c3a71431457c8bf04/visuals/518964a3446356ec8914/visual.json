@@ -28,6 +28,7 @@
               },
               "queryRef": "Engine Cycles.CYCLE",
               "nativeQueryRef": "CYCLE",
+              "active": true,
               "displayName": "Cycle"
             }
           ]

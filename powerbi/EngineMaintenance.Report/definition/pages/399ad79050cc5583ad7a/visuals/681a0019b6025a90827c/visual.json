@@ -28,6 +28,7 @@
               },
               "queryRef": "Engine Health.HEALTH_STATUS",
               "nativeQueryRef": "HEALTH_STATUS",
+              "active": true,
               "displayName": "Status"
             }
           ]

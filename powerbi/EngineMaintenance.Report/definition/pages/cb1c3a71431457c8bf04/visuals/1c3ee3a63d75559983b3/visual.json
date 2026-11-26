@@ -28,6 +28,7 @@
               },
               "queryRef": "Engine.ENGINE_KEY",
               "nativeQueryRef": "ENGINE_KEY",
+              "active": true,
               "displayName": "Engine"
             }
           ]

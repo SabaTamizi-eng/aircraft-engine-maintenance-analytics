@@ -31,7 +31,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Random forest RUL model scored on FD001 test engines at their last cycle",
+                    "value": "LightGBM RUL model per fleet, scored on all 707 test engines at their last cycle",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "10pt",
@@ -45,7 +45,6 @@
         }
       ]
     },
-    "visualContainerObjects": {},
     "drillFilterOtherVisuals": true
   }
 }
