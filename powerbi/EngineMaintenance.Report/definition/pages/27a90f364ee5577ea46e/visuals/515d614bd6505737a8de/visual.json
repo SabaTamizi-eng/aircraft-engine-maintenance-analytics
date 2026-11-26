@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Within 20 Label"
+                  "Property": "Within 20 All Engines Label"
                 }
               },
-              "queryRef": "_Measures.Within 20 Label",
-              "nativeQueryRef": "Within 20 Label"
+              "queryRef": "_Measures.Within 20 All Engines Label",
+              "nativeQueryRef": "Within 20 All Engines Label"
             }
           ]
         }

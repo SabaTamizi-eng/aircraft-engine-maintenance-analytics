@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "% Predictions Within 20 Cycles"
+                  "Property": "% Within 20 Cycles Near Failure"
                 }
               },
-              "queryRef": "_Measures.% Predictions Within 20 Cycles",
-              "nativeQueryRef": "% Predictions Within 20 Cycles"
+              "queryRef": "_Measures.% Within 20 Cycles Near Failure",
+              "nativeQueryRef": "% Within 20 Cycles Near Failure"
             }
           ]
         }
@@ -93,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'WITHIN 20 CYCLES'"
+                  "Value": "'WITHIN 20 · ≤125 CYCLES LEFT'"
                 }
               }
             },

@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Scored Engines Label"
+                  "Property": "RMSE All Engines Label"
                 }
               },
-              "queryRef": "_Measures.Scored Engines Label",
-              "nativeQueryRef": "Scored Engines Label"
+              "queryRef": "_Measures.RMSE All Engines Label",
+              "nativeQueryRef": "RMSE All Engines Label"
             }
           ]
         }

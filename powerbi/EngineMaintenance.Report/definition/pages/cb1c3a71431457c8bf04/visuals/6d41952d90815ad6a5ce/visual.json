@@ -28,6 +28,7 @@
               },
               "queryRef": "Sensor Readings.CYCLE",
               "nativeQueryRef": "CYCLE",
+              "active": true,
               "displayName": "Cycle"
             }
           ]

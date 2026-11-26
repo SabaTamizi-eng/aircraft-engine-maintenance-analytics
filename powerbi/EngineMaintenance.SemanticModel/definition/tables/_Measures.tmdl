@@ -282,6 +282,24 @@ table _Measures
 		displayFolder: Formatting
 		lineageTag: 0008c096-7c5f-5bfe-b7b6-3423ad66368f
 
+	measure 'RUL RMSE Near Failure (cycles)' = VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125 ) RETURN IF ( COUNTROWS ( Scored ) > 0, SQRT ( AVERAGEX ( Scored, 'Engine Health'[PREDICTION_ERROR] ^ 2 ) ) )
+		formatString: 0.0
+		displayFolder: Model
+		lineageTag: 77faae39-359c-5579-b97a-0169f09cfd54
+
+	measure '% Within 20 Cycles Near Failure' = VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125 ) RETURN DIVIDE ( COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ), COUNTROWS ( Scored ) )
+		formatString: 0%
+		displayFolder: Model
+		lineageTag: 0fc1e4c7-8e88-59bc-b6ff-c72d3e03119f
+
+	measure 'RMSE All Engines Label' = "All engines: " & FORMAT ( [RUL RMSE (cycles)], "0.0" ) & " cycles"
+		displayFolder: Labels
+		lineageTag: 5fe6d644-f7e2-57b1-aabf-2cab20546de5
+
+	measure 'Within 20 All Engines Label' = "All engines: " & FORMAT ( [% Predictions Within 20 Cycles], "0%" )
+		displayFolder: Labels
+		lineageTag: 882374ff-82c1-54a0-bcf6-309a13c10675
+
 	column Measures
 		dataType: string
 		isHidden

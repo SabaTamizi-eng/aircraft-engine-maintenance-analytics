@@ -13,5 +13,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pandas numpy scikit-learn python-dotenv pytest
+      - run: pip install pandas numpy scikit-learn lightgbm python-dotenv pytest
       - run: python -m pytest -q

@@ -4,8 +4,8 @@
 
 Predictive maintenance analytics on NASA's turbofan engine simulation data (C-MAPSS).
 Sensor data is loaded into Snowflake, modelled as a star schema, kept up to date with
-streams and tasks, and reported in Power BI. A random forest model estimates how many
-cycles each engine has left before it fails (remaining useful life, RUL).
+streams and tasks, and reported in Power BI. A LightGBM model per fleet estimates how
+many cycles each engine has left before it fails (remaining useful life, RUL).
 
 The question behind it is the one a maintenance planner deals with every week: which
 engines are closest to failure, and how much can we trust the estimate?
@@ -41,8 +41,12 @@ The data model is described in [docs/data_model.md](docs/data_model.md).
 
 - 1,416 engines (709 run to failure, 707 still in service) and 265,256 engine cycles
   across four fleets.
-- Baseline RUL model on fleet FD001: RMSE 20.1 cycles, MAE 14.6 cycles, and 70% of
-  engines within 20 cycles of the true RUL ([metrics](ml/metrics_fd001.json)).
+- RUL model scored on all 707 test engines ([metrics](ml/metrics.json)). For engines
+  within 125 cycles of failure, the ones maintenance planning depends on: RMSE 14.5 cycles
+  and 84% predicted within 20 cycles. Across all engines: RMSE 23.9, or 14.2 against
+  capped truth (the convention most papers use for this dataset).
+- On FD001 the first version (random forest, [metrics](ml/metrics_baseline_rf_fd001.json))
+  had RMSE 20.1 and 70% within 20 cycles; the current model gets 15.0 and 82%.
 - Of the 707 in-service engines, 159 (22.5%) are within 30 cycles of failure.
 - Running on a Snowflake trial: 243,059 engine cycles loaded through the stream and task
   (including three simulated live batches), 8 of 8 data quality checks passing, and the
@@ -65,10 +69,19 @@ model and report are plain text in Git.
 - **FD004 engine counts.** The dataset readme says 248 training and 249 test engines,
   but the files contain 249 and 248. The validation in `transform.py` flagged it.
 - **RUL is capped at 125 cycles for training.** Engines barely change early in life, so
-  the model isn't asked to tell 200 cycles left from 300. This is the usual approach
-  for this dataset.
-- **Constant sensors.** Seven of the 21 sensors don't change in FD001, so the model uses
-  the other 14 plus 10-cycle rolling means.
+  the model isn't asked to tell 200 cycles left from 300. That's also why the error is
+  much higher for young engines (22% of FD002 and 27% of FD004 test engines have more
+  than 125 cycles left) than for engines close to failure.
+- **Operating conditions.** FD002 and FD004 run in six flight conditions, which shift the
+  sensor readings far more than wear does. Each sensor is normalised within its
+  condition (found with k-means on the three operational settings) before features are
+  built. Without this step those two fleets can't be modelled.
+- **Features.** Per sensor: rolling means over 5, 15 and 30 cycles, a 15-cycle rolling
+  standard deviation, an exponentially weighted mean and the slope over the last 20
+  cycles. Sensors that don't vary after normalisation are dropped.
+- **Model selection.** Settings are chosen by 5-fold cross-validation grouped by engine
+  (an engine is never in both the training and validation fold). The test engines are
+  only used for the final scores.
 - **One transaction around the stream.** The procedure reads the stream twice (new
   engines, then cycles). Wrapping both in a transaction means they see the same rows,
   and the stream offset only moves when it commits.
@@ -111,8 +124,8 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 
 ## To do
 
-- Point the Power BI report at Snowflake (it reads the local CSV extract today)
-- Try a model for the six-condition fleets (FD002, FD004)
+- Score each engine at every cycle inside Snowflake (Snowpark), instead of only at the
+  last cycle from Python
 - Record a short demo of the report
 
 ## Layout

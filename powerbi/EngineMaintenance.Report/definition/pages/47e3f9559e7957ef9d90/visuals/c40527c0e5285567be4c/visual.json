@@ -28,6 +28,7 @@
               },
               "queryRef": "Fleet.FLEET_ID",
               "nativeQueryRef": "FLEET_ID",
+              "active": true,
               "displayName": "Fleet"
             }
           ]

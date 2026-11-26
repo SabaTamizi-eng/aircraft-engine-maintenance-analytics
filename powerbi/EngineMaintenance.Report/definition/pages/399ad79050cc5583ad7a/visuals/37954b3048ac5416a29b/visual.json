@@ -213,13 +213,6 @@
                 }
               }
             },
-            "outline": {
-              "expr": {
-                "Literal": {
-                  "Value": "'None'"
-                }
-              }
-            },
             "alignment": {
               "expr": {
                 "Literal": {
@@ -274,13 +267,6 @@
                       "Value": "'#F7F9FB'"
                     }
                   }
-                }
-              }
-            },
-            "outline": {
-              "expr": {
-                "Literal": {
-                  "Value": "'None'"
                 }
               }
             }

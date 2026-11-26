@@ -16,7 +16,11 @@ so both can be reviewed in Git.
    (with the trailing backslash), then Refresh.
 
 To read from Snowflake instead, set `SourceMode` to `Snowflake` and `SnowflakeServer` to
-your account URL. Table and column names are the same in both sources.
+your account URL. Table and column names are the same in both sources, and
+`fnLoadTable` applies the same column types to both (Snowflake returns whole numbers as
+decimals). Power BI signs in as a read-only service user: run
+`sql/08_powerbi_reader.sql`, create a programmatic access token for `POWERBI_READER`,
+and use it as the password with the **Snowflake** sign-in option.
 
 ## Model
 
