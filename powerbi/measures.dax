@@ -1,123 +1,257 @@
-// Measures (kept in a "_Measures" table). Table names = query names in power_query/queries.pq
-
+// DAX measures from the _Measures table (EngineMaintenance.SemanticModel/definition/tables/_Measures.tmdl)
 
 // ---- fleet health ----
 
 Engines In Service =
-CALCULATE (
-    DISTINCTCOUNT ( 'Engine Health'[ENGINE_KEY] ),
-    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
-)
+    CALCULATE (
+        DISTINCTCOUNT ( 'Engine Health'[ENGINE_KEY] ),
+        'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+    )
 
 Critical Engines =
-CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Critical" )
+    CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Critical" )
 
 Warning Engines =
-CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Warning" )
+    CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Warning" )
 
 Healthy Engines =
-CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Healthy" )
+    CALCULATE ( [Engines In Service], 'Engine Health'[HEALTH_STATUS] = "Healthy" )
 
 % Engines Critical =
-DIVIDE ( [Critical Engines], [Engines In Service] )
+    DIVIDE ( [Critical Engines], [Engines In Service] )
 
 Avg Remaining Useful Life (cycles) =
-CALCULATE (
-    AVERAGE ( 'Engine Health'[ACTUAL_RUL] ),
-    'Engine Health'[ENGINE_LIFECYCLE] = "In service"
-)
+    CALCULATE (
+        AVERAGE ( 'Engine Health'[ACTUAL_RUL] ),
+        'Engine Health'[ENGINE_LIFECYCLE] = "In service"
+    )
 
-
-// ---- reliability (train engines) ----
+// ---- reliability ----
 
 Avg Cycles to Failure =
-AVERAGEX (
-    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
-    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
-)
+    AVERAGEX (
+        CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+        CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+    )
 
 Shortest Life (cycles) =
-MINX (
-    CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
-    CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
-)
+    MINX (
+        CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ),
+        CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) )
+    )
 
+Run-to-Failure Engines =
+    CALCULATE ( DISTINCTCOUNT ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" )
 
 // ---- model ----
 
 Engines With Prediction =
-CALCULATE (
-    COUNTROWS ( 'Engine Health' ),
-    NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
-)
+    CALCULATE (
+        COUNTROWS ( 'Engine Health' ),
+        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+    )
+
+Actual RUL (cycles) =
+    AVERAGE ( 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] )
+
+Predicted RUL (cycles) =
+    AVERAGE ( 'Engine Health'[PREDICTED_RUL] )
 
 RUL RMSE (cycles) =
-VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
-RETURN
-    IF (
-        COUNTROWS ( Scored ) > 0,
-        SQRT ( AVERAGEX ( Scored, ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) ^ 2 ) )
-    )
+    VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+    RETURN
+        IF (
+            COUNTROWS ( Scored ) > 0,
+            SQRT ( AVERAGEX ( Scored, 'Engine Health'[PREDICTION_ERROR] ^ 2 ) )
+        )
 
 RUL MAE (cycles) =
-VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
-RETURN
-    AVERAGEX ( Scored, ABS ( 'Engine Health'[PREDICTED_RUL] - 'Engine Health'[ACTUAL_RUL] ) )
+    VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+    RETURN
+        AVERAGEX ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) )
 
 % Predictions Within 20 Cycles =
-VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
-RETURN
-    DIVIDE (
-        COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
-        COUNTROWS ( Scored )
-    )
+    VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) )
+    RETURN
+        DIVIDE (
+            COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
+            COUNTROWS ( Scored )
+        )
 
-// model said more life left than there really was
 Late Predictions (over 10 cycles) =
-COUNTROWS (
-    FILTER (
-        'Engine Health',
-        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
-            && 'Engine Health'[PREDICTION_ERROR] > 10
-    )
-)
+    COUNTROWS (
+        FILTER (
+            'Engine Health',
+            NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+                && 'Engine Health'[PREDICTION_ERROR] > 10
+        )
+    ) + 0
 
+RUL RMSE Near Failure (cycles) =
+    VAR Scored =
+        FILTER (
+            'Engine Health',
+            NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+                && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125
+        )
+    RETURN
+        IF ( COUNTROWS ( Scored ) > 0, SQRT ( AVERAGEX ( Scored, 'Engine Health'[PREDICTION_ERROR] ^ 2 ) ) )
+
+% Within 20 Cycles Near Failure =
+    VAR Scored =
+        FILTER (
+            'Engine Health',
+            NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+                && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125
+        )
+    RETURN
+        DIVIDE (
+            COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
+            COUNTROWS ( Scored )
+        )
 
 // ---- sensors ----
 
 Avg Sensor Reading =
-AVERAGE ( 'Sensor Readings'[READING] )
+    AVERAGE ( 'Sensor Readings'[READING] )
 
-// vs. the first 20 cycles
 Sensor Change vs Early Life % =
-VAR Baseline =
-    CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
-RETURN
-    DIVIDE ( [Avg Sensor Reading] - Baseline, Baseline )
+    VAR Baseline =
+        CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
+    RETURN
+        DIVIDE ( [Avg Sensor Reading] - Baseline, Baseline )
 
+Sensor Change Last vs First 20 % =
+    VAR LastCycle = CALCULATE ( MAX ( 'Sensor Readings'[CYCLE] ), REMOVEFILTERS ( 'Sensor' ) )
+    VAR Early = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
+    VAR Late = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] > LastCycle - 20 )
+    RETURN
+        DIVIDE ( Late - Early, ABS ( Early ) )
+
+// ---- engine detail ----
+
+Remaining Life (cycles) =
+    AVERAGE ( 'Engine Cycles'[ACTUAL_RUL] )
+
+Cycles Recorded =
+    MAX ( 'Engine Cycles'[CYCLE] )
+
+Selected Engine Serial =
+    SELECTEDVALUE ( 'Engine'[ENGINE_SERIAL_NUMBER], "Select one engine" )
+
+Current Health Status =
+    SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS], "-" )
+
+Health Status Color =
+    SWITCH (
+        SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ),
+        "Critical", "#F4C7C3",
+        "Warning", "#FBE3B5",
+        "Healthy", "#CDEBDC"
+    )
+
+Selected Fleet =
+    VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] )
+    RETURN
+        IF ( ISBLANK ( FleetId ), "All fleets", FleetId )
 
 // ---- data quality ----
 
 DQ Checks Passed =
-CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[STATUS] = "PASS" )
+    CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[STATUS] = "PASS" ) + 0
 
 DQ Pass Rate =
-DIVIDE ( [DQ Checks Passed], COUNTROWS ( 'Data Quality' ) )
+    DIVIDE ( [DQ Checks Passed], COUNTROWS ( 'Data Quality' ) )
 
 Last Data Check =
-MAX ( 'Data Quality'[CHECKED_AT] )
+    MAX ( 'Data Quality'[CHECKED_AT] )
 
+Engine Cycles Loaded =
+    COUNTROWS ( 'Engine Cycles' )
 
-// ---- engine detail / formatting ----
+Engines Loaded =
+    COUNTROWS ( 'Engine' )
 
-Selected Engine Serial =
-SELECTEDVALUE ( 'Engine'[ENGINE_SERIAL_NUMBER], "Select one engine" )
+// ---- labels ----
 
-// for conditional formatting (field value)
-Health Status Color =
-SWITCH (
-    SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ),
-    "Critical", "#C0392B",
-    "Warning",  "#E0A31F",
-    "Healthy",  "#2E9E6A"
-)
+Fleets Label =
+    "Across " & CALCULATE ( DISTINCTCOUNT ( 'Engine Health'[FLEET_ID] ), 'Engine Health'[ENGINE_LIFECYCLE] = "In service" ) & " fleets"
+
+Critical Share Label =
+    FORMAT ( [% Engines Critical], "0.0%" ) & " of in-service engines"
+
+Warning Share Label =
+    FORMAT ( DIVIDE ( [Warning Engines], [Engines In Service] ), "0.0%" ) & " of in-service engines"
+
+Healthy Label =
+    FORMAT ( [Healthy Engines], "#,0" ) & " of " & FORMAT ( [Engines In Service], "#,0" ) & " engines healthy"
+
+Data As Of Label =
+    "Data checked " & FORMAT ( [Last Data Check], "d mmm yyyy, hh:nn" )
+
+Engine Key Label =
+    SELECTEDVALUE ( 'Engine'[ENGINE_KEY], "No engine selected" )
+
+Operating Profile Label =
+    VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] )
+    RETURN
+        IF (
+            ISBLANK ( FleetId ),
+            "Select one engine",
+            LOOKUPVALUE ( 'Fleet'[OPERATING_CONDITION_DESC], 'Fleet'[FLEET_ID], FleetId )
+                & "  ·  "
+                & LOOKUPVALUE ( 'Fleet'[FAULT_MODES], 'Fleet'[FLEET_ID], FleetId )
+        )
+
+Cycles Left Label =
+    "Cycles left: " & FORMAT ( MIN ( 'Engine Health'[ACTUAL_RUL] ), "#,0" )
+
+Lifecycle Label =
+    SELECTEDVALUE ( 'Engine'[ENGINE_LIFECYCLE] )
+
+Run-to-Failure Fleets Label =
+    "Across " & CALCULATE ( DISTINCTCOUNT ( 'Engine'[FLEET_ID] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ) & " fleets"
+
+Median Life Label =
+    "Median " & FORMAT ( MEDIANX ( CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ), CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) ) ), "#,0" ) & " cycles"
+
+Longest Life Label =
+    "Longest " & FORMAT ( MAXX ( CALCULATETABLE ( VALUES ( 'Engine'[ENGINE_KEY] ), 'Engine'[ENGINE_LIFECYCLE] = "Run to failure" ), CALCULATE ( MAX ( 'Engine Cycles'[CYCLE] ) ) ), "#,0" ) & " cycles"
+
+Scored Engines Label =
+    "On " & [Engines With Prediction] & " test engines"
+
+Within 20 Label =
+    COUNTROWS ( FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ) & " of " & [Engines With Prediction] & " engines"
+
+Checks Label =
+    [DQ Checks Passed] & " of " & COUNTROWS ( 'Data Quality' ) & " checks passed"
+
+Failing Rows Label =
+    "Failing rows: " & FORMAT ( SUM ( 'Data Quality'[FAILING_ROWS] ) + 0, "#,0" )
+
+MAE Label =
+    "Average miss per engine"
+
+Late Label =
+    "Predicted 10+ cycles too high"
+
+Last Check Label =
+    "Runs after every load"
+
+RMSE All Engines Label =
+    "Near failure (all: " & FORMAT ( [RUL RMSE (cycles)], "0.0" ) & ")"
+
+Within 20 All Engines Label =
+    "Near failure (all: " & FORMAT ( [% Predictions Within 20 Cycles], "0%" ) & ")"
+
+// ---- formatting ----
+
+Health Status Font Color =
+    SWITCH ( SELECTEDVALUE ( 'Engine Health'[HEALTH_STATUS] ), "Critical", "#9B2A1F", "Warning", "#8A5A00", "Healthy", "#1D6B45" )
+
+DQ Status Color =
+    IF ( SELECTEDVALUE ( 'Data Quality'[STATUS] ) = "PASS", "#D6F0E2", "#F6D3CF" )
+
+DQ Status Font Color =
+    IF ( SELECTEDVALUE ( 'Data Quality'[STATUS] ) = "PASS", "#1D6B45", "#9B2A1F" )

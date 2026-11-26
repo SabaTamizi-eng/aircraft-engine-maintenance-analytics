@@ -175,7 +175,10 @@ table _Measures
 		displayFolder: Data quality
 		lineageTag: 866ea1d8-6b38-5bfc-adae-c7a354ff9557
 
-	measure 'Selected Fleet' = VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] ) RETURN IF ( ISBLANK ( FleetId ), "All fleets", FleetId )
+	measure 'Selected Fleet' =
+			VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] )
+			RETURN
+			    IF ( ISBLANK ( FleetId ), "All fleets", FleetId )
 		displayFolder: Engine detail
 		lineageTag: a63088a3-1d3c-59af-9ae8-950f32a684ea
 
@@ -208,7 +211,16 @@ table _Measures
 		displayFolder: Labels
 		lineageTag: 562d2b96-822e-5e01-8401-d9c7c15bfc7f
 
-	measure 'Operating Profile Label' = VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] ) RETURN IF ( ISBLANK ( FleetId ), "Select one engine", LOOKUPVALUE ( 'Fleet'[OPERATING_CONDITION_DESC], 'Fleet'[FLEET_ID], FleetId ) & "  ·  " & LOOKUPVALUE ( 'Fleet'[FAULT_MODES], 'Fleet'[FLEET_ID], FleetId ) )
+	measure 'Operating Profile Label' =
+			VAR FleetId = SELECTEDVALUE ( 'Engine'[FLEET_ID] )
+			RETURN
+			    IF (
+			        ISBLANK ( FleetId ),
+			        "Select one engine",
+			        LOOKUPVALUE ( 'Fleet'[OPERATING_CONDITION_DESC], 'Fleet'[FLEET_ID], FleetId )
+			            & "  ·  "
+			            & LOOKUPVALUE ( 'Fleet'[FAULT_MODES], 'Fleet'[FLEET_ID], FleetId )
+			    )
 		displayFolder: Labels
 		lineageTag: 25a13367-5cb6-5a87-ab31-442a511e09e9
 
@@ -282,12 +294,31 @@ table _Measures
 		displayFolder: Formatting
 		lineageTag: 0008c096-7c5f-5bfe-b7b6-3423ad66368f
 
-	measure 'RUL RMSE Near Failure (cycles)' = VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125 ) RETURN IF ( COUNTROWS ( Scored ) > 0, SQRT ( AVERAGEX ( Scored, 'Engine Health'[PREDICTION_ERROR] ^ 2 ) ) )
+	measure 'RUL RMSE Near Failure (cycles)' =
+			VAR Scored =
+			    FILTER (
+			        'Engine Health',
+			        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+			            && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125
+			    )
+			RETURN
+			    IF ( COUNTROWS ( Scored ) > 0, SQRT ( AVERAGEX ( Scored, 'Engine Health'[PREDICTION_ERROR] ^ 2 ) ) )
 		formatString: 0.0
 		displayFolder: Model
 		lineageTag: 77faae39-359c-5579-b97a-0169f09cfd54
 
-	measure '% Within 20 Cycles Near Failure' = VAR Scored = FILTER ( 'Engine Health', NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] ) && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125 ) RETURN DIVIDE ( COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ), COUNTROWS ( Scored ) )
+	measure '% Within 20 Cycles Near Failure' =
+			VAR Scored =
+			    FILTER (
+			        'Engine Health',
+			        NOT ISBLANK ( 'Engine Health'[PREDICTED_RUL] )
+			            && 'Engine Health'[ACTUAL_RUL_AT_PREDICTION] <= 125
+			    )
+			RETURN
+			    DIVIDE (
+			        COUNTROWS ( FILTER ( Scored, ABS ( 'Engine Health'[PREDICTION_ERROR] ) <= 20 ) ),
+			        COUNTROWS ( Scored )
+			    )
 		formatString: 0%
 		displayFolder: Model
 		lineageTag: 0fc1e4c7-8e88-59bc-b6ff-c72d3e03119f
@@ -300,7 +331,12 @@ table _Measures
 		displayFolder: Labels
 		lineageTag: 882374ff-82c1-54a0-bcf6-309a13c10675
 
-	measure 'Sensor Change Last vs First 20 %' = VAR LastCycle = CALCULATE ( MAX ( 'Sensor Readings'[CYCLE] ), REMOVEFILTERS ( 'Sensor' ) ) VAR Early = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 ) VAR Late = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] > LastCycle - 20 ) RETURN DIVIDE ( Late - Early, ABS ( Early ) )
+	measure 'Sensor Change Last vs First 20 %' =
+			VAR LastCycle = CALCULATE ( MAX ( 'Sensor Readings'[CYCLE] ), REMOVEFILTERS ( 'Sensor' ) )
+			VAR Early = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 )
+			VAR Late = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] > LastCycle - 20 )
+			RETURN
+			    DIVIDE ( Late - Early, ABS ( Early ) )
 		formatString: 0.00%
 		displayFolder: Sensors
 		lineageTag: f0d6d875-68ab-5d12-b843-6fc2ed884974

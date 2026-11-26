@@ -33,11 +33,15 @@ flowchart LR
    stored procedure that merges them into the star schema (`sql/04_cdc_streams_tasks.sql`).
 4. `pipeline/simulate_feed.py` sends new cycles for in-service engines in small batches, so
    the incremental load can be tested end to end.
-5. Power BI reads the views in the ANALYTICS schema. See [powerbi/](powerbi/).
+5. `ml/train_rul_model.py` trains one LightGBM model per fleet on the run-to-failure
+   engines and predicts the remaining life of every in-service engine; the predictions are
+   loaded into Snowflake next to the sensor data.
+6. Power BI reads the views in the ANALYTICS schema through a read-only service user, or
+   the local CSV extract when there's no Snowflake account. See [powerbi/](powerbi/).
 
 The data model is described in [docs/data_model.md](docs/data_model.md).
 
-## Results so far
+## Results
 
 - 1,416 engines (709 run to failure, 707 still in service) and 265,256 engine cycles
   across four fleets.
@@ -55,14 +59,15 @@ The data model is described in [docs/data_model.md](docs/data_model.md).
 ## Dashboard
 
 Five-page Power BI report ([powerbi/](powerbi/)), stored as a Power BI Project so the
-model and report are plain text in Git.
+model and report are plain text in Git. It reads either Snowflake or the local CSV
+extract (one parameter), with the same tables and column types in both.
 
 | | |
 |---|---|
 | ![Engine detail](docs/images/engine-detail.png) | ![Reliability](docs/images/reliability.png) |
-| **Engine detail:** sensor drift and remaining life for one engine | **Reliability:** engine life by fleet and the sensors that change most |
+| **Engine detail:** one engine's sensor over its life, and which sensors changed most | **Reliability:** engine life by fleet and the sensors that change most |
 | ![Model performance](docs/images/model-performance.png) | ![Data quality](docs/images/data-quality.png) |
-| **Model performance:** predicted vs. actual RUL | **Data quality:** check results and data loaded |
+| **Model performance:** predicted vs. actual RUL, error by health status | **Data quality:** check results and data loaded per fleet |
 
 ## Notes
 
@@ -104,7 +109,7 @@ pip install -r requirements.txt
 
 python -m pipeline.download_data
 python -m pipeline.transform
-python -m ml.train_rul_model
+python -m ml.train_rul_model                # a few minutes (cross-validation per fleet)
 python -m pipeline.export_powerbi_extract   # local CSVs for Power BI
 
 python -m pytest                            # unit tests (also run by GitHub Actions)
@@ -120,7 +125,9 @@ python -m pipeline.load_snowflake --initial --predictions
 python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 ```
 
-`sql/99_teardown.sql` drops everything again.
+`sql/07_analysis_queries.sql` has example analysis queries. To connect Power BI, run
+`sql/08_powerbi_reader.sql` and create a token for `POWERBI_READER` (steps in
+[powerbi/README.md](powerbi/README.md)). `sql/99_teardown.sql` drops everything again.
 
 ## Layout
 
@@ -128,8 +135,8 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 pipeline/  download, transform, Snowflake loading, feed simulator, Power BI extract
 ml/        RUL model and metrics
 tests/     unit tests
-sql/       Snowflake scripts, in run order
-powerbi/   Power BI project (.pbip): TMDL model, PBIR report, theme
+sql/       Snowflake scripts: 00-06 setup, 07 analysis, 08 Power BI user, 99 teardown
+powerbi/   Power BI project (.pbip), theme, readable copies of the DAX and Power Query
 docs/      data model, sensor list, report screenshots
 data/      dataset source (data files are not committed)
 ```
