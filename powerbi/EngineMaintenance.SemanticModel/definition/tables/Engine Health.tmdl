@@ -84,15 +84,6 @@ table 'Engine Health'
 
 		annotation SummarizationSetBy = Automatic
 
-	column ACTUAL_RUL_AT_PREDICTION
-		dataType: double
-		formatString: 0
-		lineageTag: 5080d731-5c8a-578a-8f0e-7b64c1631795
-		summarizeBy: none
-		sourceColumn: ACTUAL_RUL_AT_PREDICTION
-
-		annotation SummarizationSetBy = Automatic
-
 	column PREDICTION_ERROR
 		dataType: double
 		formatString: 0.0
@@ -108,6 +99,15 @@ table 'Engine Health'
 		lineageTag: 4a690054-0a11-5d3c-a5d2-e1981e804fd9
 		summarizeBy: none
 		sourceColumn: HEALTH_SORT
+
+		annotation SummarizationSetBy = Automatic
+
+	column ACTUAL_RUL_AT_PREDICTION
+		dataType: double
+		formatString: 0
+		lineageTag: 5080d731-5c8a-578a-8f0e-7b64c1631795
+		summarizeBy: none
+		sourceColumn: ACTUAL_RUL_AT_PREDICTION
 
 		annotation SummarizationSetBy = Automatic
 
