@@ -122,12 +122,6 @@ python -m pipeline.simulate_feed --batches 3 --cycles-per-batch 10
 
 `sql/99_teardown.sql` drops everything again.
 
-## To do
-
-- Score each engine at every cycle inside Snowflake (Snowpark), instead of only at the
-  last cycle from Python
-- Record a short demo of the report
-
 ## Layout
 
 ```text
