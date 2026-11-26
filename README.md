@@ -14,9 +14,7 @@ engines are closest to failure, and how much can we trust the estimate?
 
 ## How it works
 
-![Architecture: NASA data, Python pipeline, Snowflake layers with change data capture, Power BI](docs/images/architecture.png)
-
-The numbers in the diagram match these steps:
+![Engine data to Python to Snowflake to Power BI, with an ML model adding predictions](docs/images/architecture.png)
 
 1. `pipeline/transform.py` parses the NASA files and checks them (engine counts, missing
    values, duplicate or missing cycles).
