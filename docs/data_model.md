@@ -4,9 +4,16 @@
 
 | Schema | Objects | Purpose |
 |---|---|---|
-| `RAW` | `ENGINE_CYCLES_RAW`, `ENGINE_RUL_TRUTH`, `RUL_PREDICTIONS_RAW`, `ENGINE_CYCLES_STREAM` | Files land here unchanged; the stream captures new rows |
+| `RAW` | `ENGINE_STAGE`, `ENGINE_CYCLES_RAW`, `ENGINE_RUL_TRUTH`, `RUL_PREDICTIONS_RAW`, `ENGINE_CYCLES_STREAM` | Files land here unchanged; the stream captures new rows |
 | `STAGING` | `FN_ENGINE_KEY`, `STG_ENGINE_CYCLES`, `STG_ENGINE_RUL_TRUTH`, `STG_RUL_PREDICTIONS` | Business key, de-duplication, derived failure cycle |
 | `ANALYTICS` | `DIM_FLEET`, `DIM_ENGINE`, `DIM_SENSOR`, `FACT_ENGINE_CYCLE`, reporting views | Star schema for Power BI |
+| `ANALYTICS` | `SP_PROCESS_ENGINE_CYCLES`, `TASK_PROCESS_ENGINE_CYCLES` | Merge new rows from the stream every 5 minutes |
+| `ANALYTICS` | `MP_ENGINE_SERIAL`, `RAP_FLEET`, `FLEET_ACCESS_MAP`, `AP_POWERBI_PAT` | Masking, row access by fleet, Power BI sign-in policy |
+
+The warehouse is `ENGINE_WH` (X-Small, suspends after 60 seconds). Roles: `ENGINE_ENGINEER`
+(owns everything), `ENGINE_ANALYST` (reads ANALYTICS; used by Power BI through the
+`POWERBI_READER` service user) and `ENGINE_FLEET_VIEWER` (FD001 and FD003 only, masked
+serial numbers).
 
 ## Star schema
 
@@ -51,7 +58,7 @@ erDiagram
 | View | Grain | Key columns |
 |---|---|---|
 | `VW_ENGINE_CYCLE_RUL` | engine x cycle | sensors, `actual_rul`, `health_status` |
-| `VW_ENGINE_CURRENT_HEALTH` | engine (latest cycle) | `actual_rul`, `predicted_rul`, `prediction_error` |
+| `VW_ENGINE_CURRENT_HEALTH` | engine (latest cycle) | `actual_rul`, `predicted_rul`, `actual_rul_at_prediction`, `prediction_error` |
 | `VW_SENSOR_READINGS_LONG` | engine x cycle x sensor | `sensor_id`, `reading` |
 | `VW_DATA_QUALITY_CHECKS` | check | `failing_rows`, `status` |
 
@@ -60,9 +67,13 @@ last cycle; for test engines it's the last observed cycle + NASA's true RUL.
 
 `health_status`: Critical if RUL <= 30, Warning if <= 75, otherwise Healthy.
 
+`prediction_error` = predicted RUL - actual RUL at the cycle the prediction was made for
+(`actual_rul_at_prediction`), so it stays correct while the feed is still delivering
+cycles. Positive means the model was too optimistic.
+
 ## Sensors
 
-| ID | Symbol | Description | Unit | Used in model |
+| ID | Symbol | Description | Unit | Changes with wear (FD001) |
 |---|---|---|---|---|
 | 1 | T2 | Total temperature at fan inlet | deg R | |
 | 2 | T24 | Total temperature at LPC outlet | deg R | yes |
@@ -88,3 +99,8 @@ last cycle; for test engines it's the last observed cycle + NASA's true RUL.
 
 Sensor names follow Saxena et al. (2008). LPC/HPC = low/high pressure compressor,
 LPT/HPT = low/high pressure turbine.
+
+The last column is `DIM_SENSOR.used_in_baseline_model`: the 14 sensors that change over
+an engine's life in FD001. It filters the sensor charts in the report. The LightGBM model
+picks its sensors per fleet instead, after normalising them within each operating
+condition (see `ml/train_rul_model.py`).
