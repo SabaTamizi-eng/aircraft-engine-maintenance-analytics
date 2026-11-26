@@ -196,7 +196,7 @@ table _Measures
 		displayFolder: Labels
 		lineageTag: 1bf3a206-6f78-575c-bf38-b88154ae98c6
 
-	measure 'Healthy Label' = FORMAT ( [Healthy Engines], "#,0" ) & " engines above 75 cycles"
+	measure 'Healthy Label' = FORMAT ( [Healthy Engines], "#,0" ) & " of " & FORMAT ( [Engines In Service], "#,0" ) & " engines healthy"
 		displayFolder: Labels
 		lineageTag: c97b4d71-d00b-5df2-be9c-4300a97df618
 
@@ -292,13 +292,18 @@ table _Measures
 		displayFolder: Model
 		lineageTag: 0fc1e4c7-8e88-59bc-b6ff-c72d3e03119f
 
-	measure 'RMSE All Engines Label' = "All engines: " & FORMAT ( [RUL RMSE (cycles)], "0.0" ) & " cycles"
+	measure 'RMSE All Engines Label' = "Near failure (all: " & FORMAT ( [RUL RMSE (cycles)], "0.0" ) & ")"
 		displayFolder: Labels
 		lineageTag: 5fe6d644-f7e2-57b1-aabf-2cab20546de5
 
-	measure 'Within 20 All Engines Label' = "All engines: " & FORMAT ( [% Predictions Within 20 Cycles], "0%" )
+	measure 'Within 20 All Engines Label' = "Near failure (all: " & FORMAT ( [% Predictions Within 20 Cycles], "0%" ) & ")"
 		displayFolder: Labels
 		lineageTag: 882374ff-82c1-54a0-bcf6-309a13c10675
+
+	measure 'Sensor Change Last vs First 20 %' = VAR LastCycle = CALCULATE ( MAX ( 'Sensor Readings'[CYCLE] ), REMOVEFILTERS ( 'Sensor' ) ) VAR Early = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] <= 20 ) VAR Late = CALCULATE ( [Avg Sensor Reading], 'Sensor Readings'[CYCLE] > LastCycle - 20 ) RETURN DIVIDE ( Late - Early, ABS ( Early ) )
+		formatString: 0.00%
+		displayFolder: Sensors
+		lineageTag: f0d6d875-68ab-5d12-b843-6fc2ed884974
 
 	column Measures
 		dataType: string

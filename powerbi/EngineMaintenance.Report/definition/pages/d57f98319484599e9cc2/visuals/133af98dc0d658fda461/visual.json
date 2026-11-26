@@ -10,7 +10,7 @@
     "tabOrder": 15000
   },
   "visual": {
-    "visualType": "barChart",
+    "visualType": "clusteredBarChart",
     "query": {
       "queryState": {
         "Category": {
@@ -211,17 +211,6 @@
                   "Value": "true"
                 }
               }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#FFFFFF'"
-                    }
-                  }
-                }
-              }
             }
           }
         }
@@ -254,7 +243,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Engines loaded by fleet and lifecycle'"
+                  "Value": "'Engines loaded per fleet'"
                 }
               }
             },

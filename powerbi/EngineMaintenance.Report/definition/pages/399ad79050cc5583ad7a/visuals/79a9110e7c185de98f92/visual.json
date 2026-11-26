@@ -23,11 +23,11 @@
                       "Entity": "Fleet"
                     }
                   },
-                  "Property": "FLEET_NAME"
+                  "Property": "FLEET_ID"
                 }
               },
-              "queryRef": "Fleet.FLEET_NAME",
-              "nativeQueryRef": "FLEET_NAME",
+              "queryRef": "Fleet.FLEET_ID",
+              "nativeQueryRef": "FLEET_ID",
               "active": true,
               "displayName": "Fleet"
             }
