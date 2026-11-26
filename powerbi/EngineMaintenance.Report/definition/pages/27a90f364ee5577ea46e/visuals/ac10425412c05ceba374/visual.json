@@ -93,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'RMSE · ≤125 CYCLES LEFT'"
+                  "Value": "'RMSE (CYCLES)'"
                 }
               }
             },

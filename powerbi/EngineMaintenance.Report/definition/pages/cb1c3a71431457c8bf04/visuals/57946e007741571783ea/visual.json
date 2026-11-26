@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.15.0/schema.json",
-  "name": "518964a3446356ec8914",
+  "name": "57946e007741571783ea",
   "position": {
     "x": 776,
     "y": 214,
@@ -10,7 +10,7 @@
     "tabOrder": 18000
   },
   "visual": {
-    "visualType": "areaChart",
+    "visualType": "clusteredBarChart",
     "query": {
       "queryState": {
         "Category": {
@@ -20,16 +20,16 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Engine Cycles"
+                      "Entity": "Sensor"
                     }
                   },
-                  "Property": "CYCLE"
+                  "Property": "SENSOR_SYMBOL"
                 }
               },
-              "queryRef": "Engine Cycles.CYCLE",
-              "nativeQueryRef": "CYCLE",
+              "queryRef": "Sensor.SENSOR_SYMBOL",
+              "nativeQueryRef": "SENSOR_SYMBOL",
               "active": true,
-              "displayName": "Cycle"
+              "displayName": "Sensor"
             }
           ]
         },
@@ -43,12 +43,12 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Remaining Life (cycles)"
+                  "Property": "Sensor Change Last vs First 20 %"
                 }
               },
-              "queryRef": "_Measures.Remaining Life (cycles)",
-              "nativeQueryRef": "Remaining Life (cycles)",
-              "displayName": "Cycles left"
+              "queryRef": "_Measures.Sensor Change Last vs First 20 %",
+              "nativeQueryRef": "Sensor Change Last vs First 20 %",
+              "displayName": "Change"
             }
           ]
         }
@@ -57,16 +57,16 @@
         "sort": [
           {
             "field": {
-              "Column": {
+              "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Engine Cycles"
+                    "Entity": "_Measures"
                   }
                 },
-                "Property": "CYCLE"
+                "Property": "Sensor Change Last vs First 20 %"
               }
             },
-            "direction": "Ascending"
+            "direction": "Descending"
           }
         ]
       }
@@ -89,40 +89,13 @@
           }
         }
       ],
-      "categoryAxis": [
+      "labels": [
         {
           "properties": {
-            "showAxisTitle": {
+            "show": {
               "expr": {
                 "Literal": {
                   "Value": "true"
-                }
-              }
-            },
-            "titleText": {
-              "expr": {
-                "Literal": {
-                  "Value": "'Operating cycle'"
-                }
-              }
-            }
-          }
-        }
-      ],
-      "valueAxis": [
-        {
-          "properties": {
-            "showAxisTitle": {
-              "expr": {
-                "Literal": {
-                  "Value": "true"
-                }
-              }
-            },
-            "titleText": {
-              "expr": {
-                "Literal": {
-                  "Value": "'Cycles left'"
                 }
               }
             }
@@ -144,7 +117,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Remaining useful life by cycle'"
+                  "Value": "'Which sensors changed most (last 20 vs. first 20 cycles)'"
                 }
               }
             },
@@ -167,5 +140,63 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "6a36e250ea5951568857",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Sensor"
+              }
+            },
+            "Property": "USED_IN_BASELINE_MODEL"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "f",
+              "Entity": "Sensor",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "f"
+                          }
+                        },
+                        "Property": "USED_IN_BASELINE_MODEL"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "true"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
   }
 }

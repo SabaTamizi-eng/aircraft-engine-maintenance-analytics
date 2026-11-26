@@ -144,7 +144,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Sensor reading by cycle'"
+                  "Value": "'Selected sensor over the engine''s life'"
                 }
               }
             },

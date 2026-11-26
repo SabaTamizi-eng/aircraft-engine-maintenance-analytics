@@ -93,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'WITHIN 20 · ≤125 CYCLES LEFT'"
+                  "Value": "'WITHIN ±20 CYCLES'"
                 }
               }
             },
