@@ -1,0 +1,85 @@
+{
+  "model": "lightgbm",
+  "model_version": "2.0",
+  "notes": "Target capped at 125 cycles; scored against NASA's true RUL (uncapped) at each test engine's last cycle. Settings chosen by grouped CV on training engines.",
+  "all_fleets": {
+    "test_engines": 707,
+    "rmse_cycles": 23.91,
+    "mae_cycles": 16.43,
+    "share_within_20_cycles": 0.704,
+    "nasa_score": 15565.3,
+    "rmse_near_failure_cycles": 14.46,
+    "share_within_20_near_failure": 0.842,
+    "rmse_vs_capped_truth_cycles": 14.23
+  },
+  "fleets": {
+    "FD001": {
+      "test_engines": 100,
+      "cv_rmse_cycles": 13.37,
+      "rmse_cycles": 15.04,
+      "mae_cycles": 11.02,
+      "share_within_20_cycles": 0.82,
+      "nasa_score": 341.8,
+      "rmse_near_failure_cycles": 13.05,
+      "share_within_20_near_failure": 0.888,
+      "rmse_vs_capped_truth_cycles": 13.7,
+      "params": {
+        "n_estimators": 700,
+        "learning_rate": 0.03,
+        "num_leaves": 15,
+        "min_child_samples": 80
+      }
+    },
+    "FD002": {
+      "test_engines": 259,
+      "cv_rmse_cycles": 14.88,
+      "rmse_cycles": 26.62,
+      "mae_cycles": 17.91,
+      "share_within_20_cycles": 0.683,
+      "nasa_score": 10335.4,
+      "rmse_near_failure_cycles": 14.52,
+      "share_within_20_near_failure": 0.832,
+      "rmse_vs_capped_truth_cycles": 14.3,
+      "params": {
+        "n_estimators": 900,
+        "learning_rate": 0.02,
+        "num_leaves": 31,
+        "min_child_samples": 120
+      }
+    },
+    "FD003": {
+      "test_engines": 100,
+      "cv_rmse_cycles": 11.99,
+      "rmse_cycles": 14.95,
+      "mae_cycles": 11.04,
+      "share_within_20_cycles": 0.83,
+      "nasa_score": 407.7,
+      "rmse_near_failure_cycles": 13.23,
+      "share_within_20_near_failure": 0.882,
+      "rmse_vs_capped_truth_cycles": 13.14,
+      "params": {
+        "n_estimators": 700,
+        "learning_rate": 0.03,
+        "num_leaves": 15,
+        "min_child_samples": 80
+      }
+    },
+    "FD004": {
+      "test_engines": 248,
+      "cv_rmse_cycles": 14.57,
+      "rmse_cycles": 26.62,
+      "mae_cycles": 19.23,
+      "share_within_20_cycles": 0.629,
+      "nasa_score": 4480.4,
+      "rmse_near_failure_cycles": 15.57,
+      "share_within_20_near_failure": 0.812,
+      "rmse_vs_capped_truth_cycles": 14.79,
+      "params": {
+        "n_estimators": 900,
+        "learning_rate": 0.02,
+        "num_leaves": 31,
+        "min_child_samples": 120
+      }
+    }
+  }
+}
